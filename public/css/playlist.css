@@ -276,7 +276,11 @@
 .pl-song-row.playing .play-label { display: block; }
 
 /* Meta */
+/* ── Meta bài hát trong Playlist Detail ── */
 .pl-song-meta {
+  display: flex;
+  flex-direction: column; /* Đưa tên bài hát lên trên, ca sĩ xuống dưới */
+  justify-content: center;
   flex: 1;
   min-width: 0;
 }
@@ -284,18 +288,23 @@
 .pl-song-title {
   font-size: 0.9rem;
   font-weight: 500;
+  color: var(--white);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
+  width: 100%;
 }
 
 .pl-song-artist {
   font-size: 0.8rem;
   color: var(--gray);
+  margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 1px;
+  display: block;
+  width: 100%;
 }
 
 .pl-song-album {

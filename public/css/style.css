@@ -408,20 +408,25 @@ img { display: block; max-width: 100%; }
 .song-play-icon svg { width: 22px; height: 22px; fill: #000; margin-left: 3px; }
 
 .song-title {
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 600;
+  color: var(--white);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
+  width: 100%;
 }
 
 .song-artist {
   font-size: 0.82rem;
   color: var(--gray);
-  margin-top: 2px;
+  margin-top: 3px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
+  width: 100%;
 }
 
 .song-album {
@@ -510,7 +515,13 @@ img { display: block; max-width: 100%; }
   align-items: center;
   gap: 8px;
 }
-
+.player-meta {
+  display: flex;
+  flex-direction: column; /* Xếp tên bài hát lên trên, ca sĩ xuống dưới */
+  justify-content: center;
+  min-width: 0;
+  flex: 1;
+}
 .control-buttons {
   display: flex;
   align-items: center;
@@ -1062,9 +1073,11 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
     margin-bottom: 0; 
   }
   .song-info-wrap {
-    flex: 1;
-    min-width: 0;
-    text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-width: 0; /* Bắt buộc để text-overflow hoạt động trong Flexbox */
   }
   .song-title { font-size: 1rem; }
   .song-artist { font-size: 0.85rem; }
@@ -1094,6 +1107,17 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
   .player-meta .title { font-size: 0.95rem; }
   .player-meta .artist { font-size: 0.85rem; }
 
+  .player-meta .artist {
+  font-size: 0.8rem;
+  color: var(--gray);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+  }
+
   /* Hàng 2: Nút điều khiển */
   .player-controls { 
     width: 100%; 
@@ -1101,7 +1125,16 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
     flex-direction: column;
     align-items: center;
   }
-  
+  .player-meta .title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+  }
   .player-controls .control-buttons { 
     display: flex !important; /* Ghi đè lại luật ẩn của Desktop */
     width: 100%;
