@@ -6,18 +6,79 @@
   <title>Admin — Tâm Music</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    .upload-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .upload-form input[type=file] { font-size: 0.82rem; color: var(--gray); }
+    /* ── Upload zone ── */
+    .upload-zone {
+      border: 2px dashed var(--gray2);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--green);
+      background: rgba(29,185,84,0.04);
+    }
+    .upload-zone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-zone .zone-label { font-size: 0.88rem; color: var(--gray); pointer-events: none; }
+    .upload-zone .zone-label strong { color: var(--green); }
+
+    /* ── Upload progress ── */
+    .upload-progress {
+      display: none;
+      margin-top: 10px;
+      background: var(--bg3);
+      border-radius: 6px;
+      overflow: hidden;
+      height: 6px;
+    }
+    .upload-progress-bar {
+      height: 100%;
+      background: var(--green);
+      width: 0%;
+      transition: width 0.2s;
+    }
+    .upload-status {
+      font-size: 0.8rem;
+      margin-top: 6px;
+      color: var(--gray);
+      display: none;
+    }
+    .upload-status.ok    { color: var(--green); }
+    .upload-status.error { color: #fc8181; }
+
+    /* ── Preview ── */
+    .upload-preview { margin-top: 8px; border-radius: 8px; overflow: hidden; max-height: 120px; }
+    .upload-preview img { width: 100%; height: 120px; object-fit: cover; }
+
     .current-file {
       font-size: 0.78rem; color: var(--gray);
       background: var(--bg3); padding: 4px 10px;
-      border-radius: 6px; margin-top: 6px; display: inline-block;
+      border-radius: 6px; margin-top: 6px; display: inline-flex;
+      align-items: center; gap: 6px;
     }
-    /* Mở rộng max-width modal cho admin (form thêm nhạc) */
-    #songFormModal .modal { max-width: 600px; }
+
+    /* Settings upload */
+    .setting-upload-zone { margin-top: 8px; }
+    .upload-form { display: flex; gap: 8px; align-items: flex-start; flex-direction: column; }
   </style>
 </head>
 <body>
+
+<%
+  // Cloudinary config truyền từ server (không expose secret)
+  const CLOUD_NAME    = typeof cloudName    !== 'undefined' ? cloudName    : '';
+  const UPLOAD_PRESET = typeof uploadPreset !== 'undefined' ? uploadPreset : '';
+%>
+
+<!-- Nhúng config vào JS an toàn -->
+<script>
+  const CLOUDINARY_CLOUD_NAME    = '<%- CLOUD_NAME %>';
+  const CLOUDINARY_UPLOAD_PRESET = '<%- UPLOAD_PRESET %>';
+</script>
 
 <div class="admin-layout">
 
@@ -72,7 +133,6 @@
 <!-- ══ MAIN ══════════════════════════════════════ -->
 <main class="admin-main">
 
-  <!-- Thông báo -->
   <% if (message) { %>
     <div class="alert alert-success" style="margin-bottom:20px"><%= message %></div>
   <% } %>
@@ -80,16 +140,12 @@
     <div class="alert alert-error" style="margin-bottom:20px"><%= error %></div>
   <% } %>
 
-  <!-- ════════════════════════════════════════════
-       DASHBOARD
-  ════════════════════════════════════════════ -->
+  <!-- ════ DASHBOARD ════ -->
   <% if (page === 'dashboard') { %>
-
     <div class="page-title">
       <svg style="width:28px;height:28px;fill:#1DB954" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
       Dashboard
     </div>
-
     <div class="stats-grid">
       <div class="stat-card">
         <div class="label">🎵 Tổng bài hát</div>
@@ -100,7 +156,6 @@
         <div class="value"><%= totalUsers %></div>
       </div>
     </div>
-
     <div class="card">
       <div class="card-header">
         <h3>🕐 Bài hát mới nhất</h3>
@@ -108,24 +163,14 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>Ảnh</th><th>Tên bài</th><th>Ca sĩ</th><th>Ngày thêm</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Ảnh</th><th>Tên bài</th><th>Ca sĩ</th><th>Ngày thêm</th></tr></thead>
           <tbody>
             <% if (recentSongs.length === 0) { %>
               <tr><td colspan="4" style="text-align:center;color:var(--gray);padding:24px">Chưa có bài hát nào</td></tr>
             <% } %>
             <% recentSongs.forEach(s => { %>
             <tr>
-              <td>
-                <% if (s.image) { %>
-                  <img class="thumb-sm" src="<%= s.image %>" alt="">
-                <% } else { %>
-                  <div class="thumb-placeholder">🎵</div>
-                <% } %>
-              </td>
+              <td><% if (s.image) { %><img class="thumb-sm" src="<%= s.image %>" alt=""><% } else { %><div class="thumb-placeholder">🎵</div><% } %></td>
               <td><strong><%= s.title %></strong></td>
               <td style="color:var(--gray)"><%= s.artist %></td>
               <td style="color:var(--gray);font-size:0.8rem"><%= new Date(s.created_at).toLocaleDateString('vi-VN') %></td>
@@ -135,68 +180,91 @@
         </table>
       </div>
     </div>
-
   <% } %>
 
-  <!-- ════════════════════════════════════════════
-       QUẢN LÝ NHẠC
-  ════════════════════════════════════════════ -->
+  <!-- ════ QUẢN LÝ NHẠC ════ -->
   <% if (page === 'songs') { %>
-
     <div class="page-title">
       <svg style="width:28px;height:28px;fill:#1DB954" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
       Quản lý bài hát
     </div>
 
-    <!-- Form thêm / chỉnh sửa -->
     <div class="card" style="margin-bottom:24px">
       <div class="card-header">
         <h3><%= editSong ? '✏️ Chỉnh sửa bài hát' : '➕ Thêm bài hát mới' %></h3>
-        <% if (editSong) { %>
-          <a href="/admin/songs" class="btn btn-secondary btn-sm">✕ Hủy</a>
-        <% } %>
+        <% if (editSong) { %><a href="/admin/songs" class="btn btn-secondary btn-sm">✕ Hủy</a><% } %>
       </div>
       <div class="card-body">
-        <form
-          action="<%= editSong ? '/admin/songs/edit/' + editSong.id : '/admin/songs/add' %>"
-          method="POST"
-          enctype="multipart/form-data">
+
+        <!--
+          Form KHÔNG dùng enctype="multipart/form-data"
+          File upload xảy ra trực tiếp từ browser lên Cloudinary qua JS,
+          form chỉ gửi URL (text) lên server → không bao giờ vượt 4.5MB
+        -->
+        <form id="songForm"
+              action="<%= editSong ? '/admin/songs/edit/' + editSong.id : '/admin/songs/add' %>"
+              method="POST">
+
+          <!-- URL ẩn — JS sẽ điền sau khi upload Cloudinary xong -->
+          <input type="hidden" name="music_url" id="musicUrl" value="<%= editSong ? editSong.music_file : '' %>">
+          <input type="hidden" name="image_url" id="imageUrl" value="<%= editSong ? (editSong.image || '') : '' %>">
 
           <div class="form-row">
+            <!-- Tên bài -->
             <div class="form-group">
               <label>Tên bài hát *</label>
-              <input type="text" name="title" required
-                     value="<%= editSong ? editSong.title : '' %>"
-                     placeholder="Nhập tên bài hát...">
+              <input type="text" name="title" required value="<%= editSong ? editSong.title : '' %>" placeholder="Nhập tên bài hát...">
             </div>
+
+            <!-- Ca sĩ -->
             <div class="form-group">
               <label>Ca sĩ *</label>
-              <input type="text" name="artist" required
-                     value="<%= editSong ? editSong.artist : '' %>"
-                     placeholder="Nhập tên ca sĩ...">
+              <input type="text" name="artist" required value="<%= editSong ? editSong.artist : '' %>" placeholder="Nhập tên ca sĩ...">
             </div>
+
+            <!-- Album -->
             <div class="form-group">
               <label>Album</label>
-              <input type="text" name="album"
-                     value="<%= editSong ? (editSong.album || '') : '' %>"
-                     placeholder="Tên album (không bắt buộc)">
+              <input type="text" name="album" value="<%= editSong ? (editSong.album || '') : '' %>" placeholder="Tên album (không bắt buộc)">
             </div>
+
+            <!-- Upload MP3 -->
             <div class="form-group">
               <label>File MP3 <%= editSong ? '(để trống nếu không đổi)' : '*' %></label>
-              <input type="file" name="music_file" accept=".mp3" <%= editSong ? '' : 'required' %>>
+              <div class="upload-zone" id="mp3Zone">
+                <input type="file" accept=".mp3" id="mp3Input" onchange="uploadFile(this, 'music', 'mp3Zone', 'musicUrl', 'mp3Status')">
+                <div class="zone-label">
+                  🎵 Kéo thả hoặc <strong>bấm để chọn file MP3</strong><br>
+                  <small>Tối đa 100MB</small>
+                </div>
+              </div>
+              <div class="upload-progress" id="mp3Progress"><div class="upload-progress-bar" id="mp3Bar"></div></div>
+              <div class="upload-status" id="mp3Status"></div>
               <% if (editSong && editSong.music_file) { %>
-                <span class="current-file">📁 File hiện tại: .../<%= editSong.music_file.split('/').pop() %></span>
+                <span class="current-file">✅ Đã có file nhạc — để trống nếu không đổi</span>
               <% } %>
             </div>
+
+            <!-- Upload Ảnh bìa -->
             <div class="form-group">
-              <label>Ảnh bìa <%= editSong ? '(để trống nếu không đổi)' : '' %></label>
-              <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp" id="imgInput" onchange="previewImg(this)">
+              <label>Ảnh bìa</label>
+              <div class="upload-zone" id="imgZone">
+                <input type="file" accept=".jpg,.jpeg,.png,.webp" id="imgInput" onchange="uploadFile(this, 'image', 'imgZone', 'imageUrl', 'imgStatus')">
+                <div class="zone-label">
+                  🖼️ Kéo thả hoặc <strong>bấm để chọn ảnh</strong><br>
+                  <small>JPG, PNG, WEBP</small>
+                </div>
+              </div>
+              <div class="upload-progress" id="imgProgress"><div class="upload-progress-bar" id="imgBar"></div></div>
+              <div class="upload-status" id="imgStatus"></div>
               <% if (editSong && editSong.image) { %>
                 <div class="upload-preview"><img src="<%= editSong.image %>" id="imgPreview"></div>
               <% } else { %>
                 <div id="imgPreviewWrap"></div>
               <% } %>
             </div>
+
+            <!-- Mô tả -->
             <div class="form-group form-full">
               <label>Mô tả</label>
               <textarea name="description" rows="3" placeholder="Mô tả bài hát..."><%= editSong ? (editSong.description || '') : '' %></textarea>
@@ -204,7 +272,7 @@
           </div>
 
           <div style="display:flex;gap:10px;margin-top:4px">
-            <button type="submit" class="btn btn-green">
+            <button type="button" class="btn btn-green" onclick="submitSongForm()">
               <%= editSong ? '💾 Lưu thay đổi' : '➕ Thêm bài hát' %>
             </button>
             <% if (editSong) { %>
@@ -223,45 +291,23 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr>
-              <th>Ảnh</th>
-              <th>Tên bài</th>
-              <th>Ca sĩ</th>
-              <th>Album</th>
-              <th>Ngày thêm</th>
-              <th>Thao tác</th>
-            </tr>
+            <tr><th>Ảnh</th><th>Tên bài</th><th>Ca sĩ</th><th>Album</th><th>Ngày thêm</th><th>Thao tác</th></tr>
           </thead>
           <tbody>
             <% if (songs.length === 0) { %>
-              <tr>
-                <td colspan="6" style="text-align:center;color:var(--gray);padding:32px">
-                  Chưa có bài hát nào. Hãy thêm bài đầu tiên!
-                </td>
-              </tr>
+              <tr><td colspan="6" style="text-align:center;color:var(--gray);padding:32px">Chưa có bài hát nào. Hãy thêm bài đầu tiên!</td></tr>
             <% } %>
             <% songs.forEach(s => { %>
             <tr>
-              <td>
-                <% if (s.image) { %>
-                  <img class="thumb-sm" src="<%= s.image %>" alt="">
-                <% } else { %>
-                  <div class="thumb-placeholder">🎵</div>
-                <% } %>
-              </td>
+              <td><% if (s.image) { %><img class="thumb-sm" src="<%= s.image %>" alt=""><% } else { %><div class="thumb-placeholder">🎵</div><% } %></td>
               <td><strong><%= s.title %></strong></td>
               <td style="color:var(--gray)"><%= s.artist %></td>
               <td style="color:var(--gray);font-size:0.82rem"><%= s.album || '—' %></td>
-              <td style="color:var(--gray);font-size:0.8rem;white-space:nowrap">
-                <%= new Date(s.created_at).toLocaleDateString('vi-VN') %>
-              </td>
+              <td style="color:var(--gray);font-size:0.8rem;white-space:nowrap"><%= new Date(s.created_at).toLocaleDateString('vi-VN') %></td>
               <td>
                 <div class="action-row">
                   <a href="/admin/songs/edit/<%= s.id %>" class="btn btn-secondary btn-sm">✏️ Sửa</a>
-                  <button class="btn btn-danger btn-sm"
-                          onclick="confirmDelete(<%= s.id %>, '<%= s.title.replace(/'/g, "\\'") %>')">
-                    🗑️ Xóa
-                  </button>
+                  <button class="btn btn-danger btn-sm" onclick="confirmDelete(<%= s.id %>, '<%= s.title.replace(/'/g, "\\'") %>')">🗑️ Xóa</button>
                 </div>
               </td>
             </tr>
@@ -271,7 +317,7 @@
       </div>
     </div>
 
-    <!-- Modal xác nhận xóa -->
+    <!-- Modal xóa -->
     <div class="modal-overlay" id="deleteModal">
       <div class="modal" style="max-width:420px">
         <div class="modal-header">
@@ -290,14 +336,10 @@
         </form>
       </div>
     </div>
-
   <% } %>
 
-  <!-- ════════════════════════════════════════════
-       CÀI ĐẶT GIAO DIỆN
-  ════════════════════════════════════════════ -->
+  <!-- ════ CÀI ĐẶT GIAO DIỆN ════ -->
   <% if (page === 'settings') { %>
-
     <div class="page-title">
       <svg style="width:28px;height:28px;fill:#1DB954" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
       Cài đặt giao diện
@@ -307,92 +349,264 @@
       💡 Sau khi cập nhật, khách chỉ cần F5 để thấy thay đổi.
     </div>
 
-    <div class="settings-grid">
+    <!-- Settings: 1 form duy nhất gửi tất cả URL -->
+    <form id="settingsForm" action="/admin/settings/update" method="POST">
+      <input type="hidden" name="logo"             id="logoUrl"       value="<%= settings.logo || '' %>">
+      <input type="hidden" name="banner"           id="bannerUrl"     value="<%= settings.banner || '' %>">
+      <input type="hidden" name="background"       id="bgUrl"         value="<%= settings.background || '' %>">
+      <input type="hidden" name="login_background" id="loginBgUrl"    value="<%= settings.login_background || '' %>">
 
-      <!-- Logo -->
-      <div class="setting-card">
-        <div class="preview">
-          <% if (settings.logo) { %>
-            <img src="<%= settings.logo %>" alt="Logo" style="object-fit:contain">
-          <% } else { %>
-            <span class="no-img">🎵</span>
-          <% } %>
+      <div class="settings-grid">
+
+        <!-- Logo -->
+        <div class="setting-card">
+          <div class="preview" id="logoPreview">
+            <% if (settings.logo) { %><img src="<%= settings.logo %>" alt="Logo" style="object-fit:contain"><% } else { %><span class="no-img">🎵</span><% } %>
+          </div>
+          <div class="setting-body">
+            <h4>Logo website</h4>
+            <p>Hiển thị ở header và sidebar</p>
+            <div class="upload-zone setting-upload-zone" id="logoZone">
+              <input type="file" accept=".jpg,.jpeg,.png,.webp" onchange="uploadSettingFile(this,'logoUrl','logoZone','logoPreview','logoStatus')">
+              <div class="zone-label">📁 Chọn ảnh logo</div>
+            </div>
+            <div class="upload-progress" id="logoProgress"><div class="upload-progress-bar" id="logoBar"></div></div>
+            <div class="upload-status" id="logoStatus"></div>
+          </div>
         </div>
-        <div class="setting-body">
-          <h4>Logo website</h4>
-          <p>Hiển thị ở header và sidebar</p>
-          <form action="/admin/settings/upload/logo" method="POST" enctype="multipart/form-data" class="upload-form">
-            <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp" required>
-            <button type="submit" class="btn btn-green btn-sm">Cập nhật</button>
-          </form>
+
+        <!-- Banner -->
+        <div class="setting-card">
+          <div class="preview" id="bannerPreview">
+            <% if (settings.banner) { %><img src="<%= settings.banner %>" alt="Banner"><% } else { %><span class="no-img">🖼️</span><% } %>
+          </div>
+          <div class="setting-body">
+            <h4>Banner trang chủ</h4>
+            <p>Ảnh banner hiển thị đầu trang Guest</p>
+            <div class="upload-zone setting-upload-zone" id="bannerZone">
+              <input type="file" accept=".jpg,.jpeg,.png,.webp" onchange="uploadSettingFile(this,'bannerUrl','bannerZone','bannerPreview','bannerStatus')">
+              <div class="zone-label">📁 Chọn ảnh banner</div>
+            </div>
+            <div class="upload-progress" id="bannerProgress"><div class="upload-progress-bar" id="bannerBar"></div></div>
+            <div class="upload-status" id="bannerStatus"></div>
+          </div>
         </div>
+
+        <!-- Background -->
+        <div class="setting-card">
+          <div class="preview" id="bgPreview">
+            <% if (settings.background) { %><img src="<%= settings.background %>" alt="BG"><% } else { %><span class="no-img">🌆</span><% } %>
+          </div>
+          <div class="setting-body">
+            <h4>Ảnh nền trang chủ</h4>
+            <p>Background của trang Guest</p>
+            <div class="upload-zone setting-upload-zone" id="bgZone">
+              <input type="file" accept=".jpg,.jpeg,.png,.webp" onchange="uploadSettingFile(this,'bgUrl','bgZone','bgPreview','bgStatus')">
+              <div class="zone-label">📁 Chọn ảnh nền</div>
+            </div>
+            <div class="upload-progress" id="bgProgress"><div class="upload-progress-bar" id="bgBar"></div></div>
+            <div class="upload-status" id="bgStatus"></div>
+          </div>
+        </div>
+
+        <!-- Login Background -->
+        <div class="setting-card">
+          <div class="preview" id="loginBgPreview">
+            <% if (settings.login_background) { %><img src="<%= settings.login_background %>" alt="Login BG"><% } else { %><span class="no-img">🔒</span><% } %>
+          </div>
+          <div class="setting-body">
+            <h4>Ảnh nền trang Login</h4>
+            <p>Background của trang đăng nhập</p>
+            <div class="upload-zone setting-upload-zone" id="loginBgZone">
+              <input type="file" accept=".jpg,.jpeg,.png,.webp" onchange="uploadSettingFile(this,'loginBgUrl','loginBgZone','loginBgPreview','loginBgStatus')">
+              <div class="zone-label">📁 Chọn ảnh nền login</div>
+            </div>
+            <div class="upload-progress" id="loginBgProgress"><div class="upload-progress-bar" id="loginBgBar"></div></div>
+            <div class="upload-status" id="loginBgStatus"></div>
+          </div>
+        </div>
+
       </div>
 
-      <!-- Banner -->
-      <div class="setting-card">
-        <div class="preview">
-          <% if (settings.banner) { %>
-            <img src="<%= settings.banner %>" alt="Banner">
-          <% } else { %>
-            <span class="no-img">🖼️</span>
-          <% } %>
-        </div>
-        <div class="setting-body">
-          <h4>Banner trang chủ</h4>
-          <p>Ảnh banner hiển thị đầu trang Guest (max 300px chiều cao)</p>
-          <form action="/admin/settings/upload/banner" method="POST" enctype="multipart/form-data" class="upload-form">
-            <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp" required>
-            <button type="submit" class="btn btn-green btn-sm">Cập nhật</button>
-          </form>
-        </div>
+      <div style="margin-top:20px">
+        <button type="submit" class="btn btn-green">💾 Lưu tất cả thay đổi</button>
       </div>
-
-      <!-- Background trang chủ -->
-      <div class="setting-card">
-        <div class="preview">
-          <% if (settings.background) { %>
-            <img src="<%= settings.background %>" alt="Background">
-          <% } else { %>
-            <span class="no-img">🌆</span>
-          <% } %>
-        </div>
-        <div class="setting-body">
-          <h4>Ảnh nền trang chủ</h4>
-          <p>Background của trang Guest</p>
-          <form action="/admin/settings/upload/background" method="POST" enctype="multipart/form-data" class="upload-form">
-            <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp" required>
-            <button type="submit" class="btn btn-green btn-sm">Cập nhật</button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Background Login -->
-      <div class="setting-card">
-        <div class="preview">
-          <% if (settings.login_background) { %>
-            <img src="<%= settings.login_background %>" alt="Login BG">
-          <% } else { %>
-            <span class="no-img">🔒</span>
-          <% } %>
-        </div>
-        <div class="setting-body">
-          <h4>Ảnh nền trang Login</h4>
-          <p>Background của trang đăng nhập / đăng ký</p>
-          <form action="/admin/settings/upload/login_background" method="POST" enctype="multipart/form-data" class="upload-form">
-            <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp" required>
-            <button type="submit" class="btn btn-green btn-sm">Cập nhật</button>
-          </form>
-        </div>
-      </div>
-
-    </div>
+    </form>
   <% } %>
 
 </main>
-</div><!-- end admin-layout -->
+</div>
 
 <script>
-// ── Xác nhận xóa ────────────────────────────────
+// ════════════════════════════════════════════════
+// CLOUDINARY CLIENT-SIDE UPLOAD
+// Gửi file trực tiếp từ browser → Cloudinary
+// Server chỉ nhận URL → không bao giờ vượt 4.5MB Vercel limit
+// ════════════════════════════════════════════════
+
+/**
+ * Upload 1 file lên Cloudinary qua XHR (để theo dõi progress)
+ * @param {File}   file         - File cần upload
+ * @param {string} resourceType - 'image' | 'video' (Cloudinary gọi audio là "video")
+ * @param {string} barId        - id của progress bar element
+ * @returns {Promise<string>}   - URL Cloudinary sau khi upload xong
+ */
+function cloudinaryUpload(file, resourceType, barId) {
+  return new Promise((resolve, reject) => {
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+      reject(new Error('Chưa cấu hình Cloudinary (CLOUD_NAME / UPLOAD_PRESET)'));
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append('file',         file);
+    fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    fd.append('folder',        'music-player');
+
+    const xhr = new XMLHttpRequest();
+    const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
+
+    // Theo dõi tiến trình upload
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        const bar = document.getElementById(barId);
+        if (bar) bar.style.width = pct + '%';
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        resolve(data.secure_url);
+      } else {
+        const err = JSON.parse(xhr.responseText);
+        reject(new Error(err.error?.message || 'Upload thất bại'));
+      }
+    });
+
+    xhr.addEventListener('error', () => reject(new Error('Lỗi kết nối')));
+    xhr.open('POST', url);
+    xhr.send(fd);
+  });
+}
+
+/**
+ * Upload file nhạc hoặc ảnh bìa trong form thêm/sửa bài hát
+ */
+async function uploadFile(input, type, zoneId, hiddenInputId, statusId) {
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const isMusic      = type === 'music';
+  const resourceType = isMusic ? 'video' : 'image'; // Cloudinary: mp3 → "video"
+  const barId        = isMusic ? 'mp3Bar' : 'imgBar';
+  const progressEl   = document.getElementById(isMusic ? 'mp3Progress' : 'imgProgress');
+  const statusEl     = document.getElementById(statusId);
+
+  // Hiện progress
+  progressEl.style.display = 'block';
+  statusEl.style.display   = 'block';
+  statusEl.className       = 'upload-status';
+  statusEl.textContent     = `⏳ Đang tải lên... (0%)`;
+
+  // Cập nhật % hiển thị
+  const observer = setInterval(() => {
+    const bar = document.getElementById(barId);
+    if (bar) statusEl.textContent = `⏳ Đang tải lên... (${bar.style.width || '0%'})`;
+  }, 200);
+
+  try {
+    const url = await cloudinaryUpload(file, resourceType, barId);
+
+    clearInterval(observer);
+    document.getElementById(hiddenInputId).value = url;
+
+    statusEl.textContent = '✅ Tải lên thành công!';
+    statusEl.className   = 'upload-status ok';
+    document.getElementById(barId).style.width = '100%';
+
+    // Preview ảnh bìa
+    if (!isMusic) {
+      const preview = document.getElementById('imgPreview');
+      const wrap    = document.getElementById('imgPreviewWrap');
+      if (preview) preview.src = url;
+      else if (wrap) wrap.innerHTML = `<div class="upload-preview"><img src="${url}"></div>`;
+    }
+
+  } catch (err) {
+    clearInterval(observer);
+    statusEl.textContent = '❌ ' + err.message;
+    statusEl.className   = 'upload-status error';
+    progressEl.style.display = 'none';
+  }
+}
+
+/**
+ * Upload ảnh cài đặt (logo / banner / background)
+ */
+async function uploadSettingFile(input, hiddenInputId, zoneId, previewId, statusId) {
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const barId      = zoneId.replace('Zone', 'Bar');
+  const progressEl = document.getElementById(zoneId.replace('Zone', 'Progress'));
+  const statusEl   = document.getElementById(statusId);
+
+  progressEl.style.display = 'block';
+  statusEl.style.display   = 'block';
+  statusEl.className       = 'upload-status';
+  statusEl.textContent     = '⏳ Đang tải lên...';
+
+  try {
+    const url = await cloudinaryUpload(file, 'image', barId);
+
+    document.getElementById(hiddenInputId).value = url;
+    statusEl.textContent = '✅ Tải lên xong, bấm Lưu để cập nhật';
+    statusEl.className   = 'upload-status ok';
+    document.getElementById(barId).style.width = '100%';
+
+    // Preview ngay
+    const previewEl = document.getElementById(previewId);
+    if (previewEl) previewEl.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
+
+  } catch (err) {
+    statusEl.textContent = '❌ ' + err.message;
+    statusEl.className   = 'upload-status error';
+    progressEl.style.display = 'none';
+  }
+}
+
+/**
+ * Submit form bài hát — kiểm tra đã upload xong chưa
+ */
+function submitSongForm() {
+  const musicUrl = document.getElementById('musicUrl').value;
+  const mp3Input = document.getElementById('mp3Input');
+  const isEdit   = !!('<%- editSong ? editSong.id : "" %>');
+
+  // Chỉ bắt buộc mp3 khi thêm mới
+  if (!isEdit && !musicUrl) {
+    alert('Vui lòng chọn và chờ upload file MP3 xong trước khi lưu!');
+    return;
+  }
+
+  // Kiểm tra đang upload (progress chưa 100%)
+  const mp3Bar = document.getElementById('mp3Bar');
+  const imgBar = document.getElementById('imgBar');
+  const mp3Pct = parseInt(mp3Bar?.style.width) || 0;
+  const imgPct = parseInt(imgBar?.style.width) || 0;
+
+  if ((mp3Input.files?.length > 0 && mp3Pct < 100) ||
+      (document.getElementById('imgInput').files?.length > 0 && imgPct < 100)) {
+    alert('Vui lòng chờ upload xong rồi mới bấm lưu!');
+    return;
+  }
+
+  document.getElementById('songForm').submit();
+}
+
+// ── Modal xóa ────────────────────────────────────
 function confirmDelete(id, name) {
   document.getElementById('deleteSongName').textContent = `"${name}"`;
   document.getElementById('deleteForm').action = `/admin/songs/delete/${id}`;
@@ -400,33 +614,16 @@ function confirmDelete(id, name) {
 }
 
 function closeModal() {
-  document.getElementById('deleteModal').classList.remove('open');
+  document.getElementById('deleteModal')?.classList.remove('open');
 }
 
-// Đóng khi click nền hoặc Escape
-document.getElementById('deleteModal')?.addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
+document.getElementById('deleteModal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('deleteModal')) closeModal();
 });
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
-});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-// ── Preview ảnh bìa trước khi upload ────────────
-function previewImg(input) {
-  const wrap = document.getElementById('imgPreviewWrap');
-  const preview = document.getElementById('imgPreview');
-  if (!input.files || !input.files[0]) return;
-  const url = URL.createObjectURL(input.files[0]);
-
-  if (preview) {
-    preview.src = url;
-  } else if (wrap) {
-    wrap.innerHTML = `<div class="upload-preview"><img src="${url}"></div>`;
-  }
-}
-
-// Tự ẩn thông báo sau 4 giây
+// ── Tự ẩn thông báo sau 4s ───────────────────────
 setTimeout(() => {
   document.querySelectorAll('.alert-success').forEach(el => {
     el.style.transition = 'opacity 0.5s';
