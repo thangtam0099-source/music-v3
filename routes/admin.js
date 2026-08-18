@@ -1,10 +1,10 @@
 const express = require('express');
 const router  = express.Router();
 const { db }  = require('../database/db');
-const { requireAdmin }            = require('../middleware/auth');
-const { uploadSong, uploadImage } = require('../middleware/upload');
-const { deleteFromCloudinary }    = require('../config/cloudinary');
+const { requireAdmin }         = require('../middleware/auth');
+const { deleteFromCloudinary } = require('../config/cloudinary');
 
+// ── Xóa file trên Cloudinary ─────────────────────
 function deleteFile(url) {
   if (url && url.includes('cloudinary.com'))
     deleteFromCloudinary(url).catch(() => {});
@@ -19,15 +19,19 @@ function base(extra) {
   return {
     user: null, songs: [], editSong: null, settings: {},
     totalSongs: 0, totalUsers: 0, recentSongs: [],
-    message: null, error: null, ...extra
+    message: null, error: null,
+    // Truyền Cloudinary config cho client-side upload
+    cloudName:    process.env.CLOUDINARY_CLOUD_NAME    || '',
+    uploadPreset: process.env.CLOUDINARY_UPLOAD_PRESET || '',
+    ...extra
   };
 }
 
 // ── GET /admin ──────────────────────────────────
 router.get('/', requireAdmin, async (req, res) => {
-  const { rows: songs }   = await db.execute('SELECT COUNT(*) as c FROM music');
-  const { rows: users }   = await db.execute('SELECT COUNT(*) as c FROM users');
-  const { rows: recent }  = await db.execute('SELECT * FROM music ORDER BY created_at DESC LIMIT 5');
+  const { rows: songs }  = await db.execute('SELECT COUNT(*) as c FROM music');
+  const { rows: users }  = await db.execute('SELECT COUNT(*) as c FROM users');
+  const { rows: recent } = await db.execute('SELECT * FROM music ORDER BY created_at DESC LIMIT 5');
   res.render('admin', base({
     user: req.session.user, page: 'dashboard', settings: await getSettings(),
     totalSongs: Number(songs[0].c), totalUsers: Number(users[0].c), recentSongs: recent
@@ -45,71 +49,64 @@ router.get('/songs', requireAdmin, async (req, res) => {
 
 // ── GET /admin/songs/edit/:id ───────────────────
 router.get('/songs/edit/:id', requireAdmin, async (req, res) => {
-  const { rows }        = await db.execute('SELECT * FROM music WHERE id = ?', [req.params.id]);
-  const editSong        = rows[0];
+  const { rows }         = await db.execute('SELECT * FROM music WHERE id = ?', [req.params.id]);
+  const editSong         = rows[0];
   if (!editSong) return res.redirect('/admin/songs');
-  const { rows: songs } = await db.execute('SELECT * FROM music ORDER BY created_at DESC');
+  const { rows: songs }  = await db.execute('SELECT * FROM music ORDER BY created_at DESC');
   res.render('admin', base({
     user: req.session.user, page: 'songs', songs, editSong, settings: await getSettings()
   }));
 });
 
 // ── POST /admin/songs/add ───────────────────────
-router.post('/songs/add', requireAdmin, (req, res) => {
-  uploadSong(req, res, async (err) => {
-    if (err) return res.redirect('/admin/songs?message=Lỗi upload: ' + err.message);
-    const { title, artist, album, description } = req.body;
-    if (!title || !artist) return res.redirect('/admin/songs?message=Thiếu tên bài hoặc ca sĩ');
-    const musicFile = req.files?.music_file?.[0];
-    if (!musicFile) return res.redirect('/admin/songs?message=Vui lòng chọn file mp3');
-    const imageFile = req.files?.image?.[0];
+// Nhận URL Cloudinary từ client (browser đã upload trực tiếp)
+router.post('/songs/add', requireAdmin, async (req, res) => {
+  const { title, artist, album, description, music_url, image_url } = req.body;
 
-    await db.execute(
-      `INSERT INTO music (title, artist, album, description, image, music_file)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        title.trim(), artist.trim(),
-        album?.trim()       || null,
-        description?.trim() || null,
-        imageFile?.cloudinaryUrl || null,
-        musicFile.cloudinaryUrl
-      ]
-    );
-    res.redirect('/admin/songs?message=Đã thêm bài hát thành công!');
-  });
+  if (!title || !artist)
+    return res.redirect('/admin/songs?message=Thiếu tên bài hoặc ca sĩ');
+  if (!music_url)
+    return res.redirect('/admin/songs?message=Vui lòng upload file mp3');
+
+  await db.execute(
+    `INSERT INTO music (title, artist, album, description, image, music_file)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      title.trim(), artist.trim(),
+      album?.trim()       || null,
+      description?.trim() || null,
+      image_url || null,
+      music_url
+    ]
+  );
+  res.redirect('/admin/songs?message=Đã thêm bài hát thành công!');
 });
 
 // ── POST /admin/songs/edit/:id ──────────────────
-router.post('/songs/edit/:id', requireAdmin, (req, res) => {
-  uploadSong(req, res, async (err) => {
-    if (err) return res.redirect(`/admin/songs?message=Lỗi: ${err.message}`);
-    const { rows } = await db.execute('SELECT * FROM music WHERE id = ?', [req.params.id]);
-    const song = rows[0];
-    if (!song) return res.redirect('/admin/songs');
+router.post('/songs/edit/:id', requireAdmin, async (req, res) => {
+  const { rows } = await db.execute('SELECT * FROM music WHERE id = ?', [req.params.id]);
+  const song = rows[0];
+  if (!song) return res.redirect('/admin/songs');
 
-    const { title, artist, album, description } = req.body;
-    const musicFile = req.files?.music_file?.[0];
-    const imageFile = req.files?.image?.[0];
+  const { title, artist, album, description, music_url, image_url } = req.body;
 
-    let musicUrl = song.music_file;
-    if (musicFile?.cloudinaryUrl) { deleteFile(song.music_file); musicUrl = musicFile.cloudinaryUrl; }
+  // Nếu có URL mới → xóa file cũ trên Cloudinary
+  if (music_url && music_url !== song.music_file) deleteFile(song.music_file);
+  if (image_url && image_url !== song.image)      deleteFile(song.image);
 
-    let imageUrl = song.image;
-    if (imageFile?.cloudinaryUrl) { deleteFile(song.image); imageUrl = imageFile.cloudinaryUrl; }
-
-    await db.execute(
-      `UPDATE music SET title=?, artist=?, album=?, description=?, image=?, music_file=? WHERE id=?`,
-      [
-        title?.trim()       || song.title,
-        artist?.trim()      || song.artist,
-        album?.trim()       || null,
-        description?.trim() || null,
-        imageUrl, musicUrl,
-        req.params.id
-      ]
-    );
-    res.redirect('/admin/songs?message=Đã cập nhật bài hát!');
-  });
+  await db.execute(
+    `UPDATE music SET title=?, artist=?, album=?, description=?, image=?, music_file=? WHERE id=?`,
+    [
+      title?.trim()       || song.title,
+      artist?.trim()      || song.artist,
+      album?.trim()       || null,
+      description?.trim() || null,
+      image_url  || song.image,
+      music_url  || song.music_file,
+      req.params.id
+    ]
+  );
+  res.redirect('/admin/songs?message=Đã cập nhật bài hát!');
 });
 
 // ── POST /admin/songs/delete/:id ────────────────
@@ -131,23 +128,21 @@ router.get('/settings', requireAdmin, async (req, res) => {
   }));
 });
 
-// ── POST /admin/settings/upload/:type ───────────
-router.post('/settings/upload/:type', requireAdmin, (req, res) => {
-  const { type } = req.params;
-  if (!['logo','banner','background','login_background'].includes(type))
-    return res.redirect('/admin/settings');
+// ── POST /admin/settings/update ─────────────────
+// Nhận URL Cloudinary từ client cho logo/banner/background/login_background
+router.post('/settings/update', requireAdmin, async (req, res) => {
+  const allowed = ['logo', 'banner', 'background', 'login_background'];
+  const settings = await getSettings();
 
-  uploadImage(req, res, async (err) => {
-    if (err) return res.redirect('/admin/settings?message=Lỗi: ' + err.message);
-    if (!req.file?.cloudinaryUrl)
-      return res.redirect('/admin/settings?message=Vui lòng chọn file ảnh');
+  for (const type of allowed) {
+    const url = req.body[type];
+    if (url && url !== settings[type]) {
+      if (settings[type]) deleteFile(settings[type]);
+      await db.execute(`UPDATE settings SET ${type} = ? WHERE id = 1`, [url]);
+    }
+  }
 
-    const settings = await getSettings();
-    if (settings[type]) deleteFile(settings[type]);
-
-    await db.execute(`UPDATE settings SET ${type} = ? WHERE id = 1`, [req.file.cloudinaryUrl]);
-    res.redirect(`/admin/settings?message=Đã cập nhật ${type} thành công!`);
-  });
+  res.redirect('/admin/settings?message=Đã cập nhật giao diện thành công!');
 });
 
 module.exports = router;
