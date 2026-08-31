@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Album — Tâm Music</title>
+  <link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/playlist.css">
+</head>
+<body <% if (settings.background) { %> style="background-image:url('<%= settings.background %>');background-size:cover;background-attachment:fixed;" <% } %>>
+<header class="site-header"><div class="header-inner">
+  <a class="logo" href="/"><% if (settings.logo) { %><img src="<%= settings.logo %>" alt="Logo"><% } else { %><span>🎵</span><% } %><span>Tâm Music</span></a>
+  <nav class="main-nav"><a href="/" class="nav-pill">Trang chủ</a><a href="/albums" class="nav-pill active">Album</a><a href="/playlists" class="nav-pill">Playlist</a></nav>
+  <div class="header-actions"><% if (user) { %><div class="user-badge">👤 <span><%= user.username %></span></div><a href="/logout" class="btn btn-secondary btn-sm">Đăng xuất</a><% } else { %><a href="/login" class="btn btn-secondary btn-sm">Đăng nhập</a><% } %></div>
+</div></header>
+<main class="main-content"><div class="section-header"><h2>Album (<%= albums.length %>)</h2></div>
+<% if (albums.length === 0) { %><div class="empty-state"><div class="empty-icon">💿</div><h3>Chưa có album nào</h3><p>Album mới sẽ xuất hiện tại đây.</p></div><% } else { %>
+<div class="playlist-grid album-grid"><% albums.forEach(album => { %><a href="/albums/<%= album.id %>" class="playlist-card album-card pl-card-link"><div class="pl-cover"><% if (album.thumbnail) { %><img src="<%= album.thumbnail %>" alt="<%= album.name %>"><% } else { %><div class="pl-cover-placeholder">💿</div><% } %><div class="pl-play-overlay">▶</div></div><div class="pl-info"><div class="pl-name"><%= album.name %></div><div class="pl-count"><%= album.song_count %> bài hát</div></div></a><% }) %></div><% } %>
+</main>
+<%- include('partials/footer', { settings }) %>
+</body></html>
