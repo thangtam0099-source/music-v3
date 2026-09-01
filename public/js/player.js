@@ -18,6 +18,55 @@ let currentIdx = -1;
 let isPlaying  = false;
 let repeat     = false;
 
+function setupTextMarquee(el) {
+  if (!el || !(el instanceof HTMLElement)) return;
+
+  const text = (el.textContent || '').trim();
+  if (!text) return;
+
+  const hasMarquee = el.classList.contains('text-marquee');
+  if (!hasMarquee) {
+    el.classList.add('text-marquee');
+  }
+
+  const currentTrack = el.querySelector('.marquee-track');
+  if (currentTrack) {
+    currentTrack.remove();
+  }
+
+  const overflow = el.scrollWidth > el.clientWidth + 1;
+  el.dataset.marquee = overflow ? 'active' : 'inactive';
+
+  if (!overflow) {
+    el.textContent = text;
+    return;
+  }
+
+  const track = document.createElement('div');
+  track.className = 'marquee-track';
+  track.innerHTML = `
+    <span class="marquee-item">${text}</span>
+    <span class="marquee-item" aria-hidden="true">${text}</span>
+  `;
+  el.textContent = '';
+  el.appendChild(track);
+}
+
+function initTextMarquee(selector) {
+  document.querySelectorAll(selector).forEach(el => setupTextMarquee(el));
+}
+
+function updatePlayerTitle(song) {
+  if (!playerTitle) return;
+  playerTitle.textContent = song.title || '—';
+  setupTextMarquee(playerTitle);
+}
+
+window.addEventListener('load', () => {
+  initTextMarquee('.song-title, .pl-song-title, .player-meta .title');
+  if (playerTitle) setupTextMarquee(playerTitle);
+});
+
 // SVG icons
 const ICON_PLAY  = '<path d="M8 5v14l11-7z"/>';
 const ICON_PAUSE = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
@@ -49,7 +98,7 @@ function playSong(idx) {
 
   // Cập nhật UI player bar
   playerBar.classList.add('visible');
-  playerTitle.textContent  = song.title;
+  updatePlayerTitle(song);
   playerArtist.textContent = song.artist;
   updatePlayIcon();
   updateCover(song.image);

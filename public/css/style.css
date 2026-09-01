@@ -804,6 +804,37 @@ img { display: block; max-width: 100%; }
 
 .song-play-icon svg { width: 22px; height: 22px; fill: #000; margin-left: 3px; }
 
+.text-marquee {
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  display: block;
+}
+
+.text-marquee .marquee-track {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  min-width: max-content;
+  will-change: transform;
+}
+
+.text-marquee .marquee-item {
+  display: inline-block;
+  padding-right: 28px;
+}
+
+.text-marquee[data-marquee="active"] .marquee-track {
+  animation: text-marquee-left 8s linear infinite;
+}
+
+@keyframes text-marquee-left {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 .song-title {
   font-size: 0.95rem;
   font-weight: 600;
@@ -902,7 +933,13 @@ img { display: block; max-width: 100%; }
 }
 
 .player-meta { min-width: 0; }
-.player-meta .title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-meta .title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .player-meta .artist { font-size: 0.8rem; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Center: controls */
