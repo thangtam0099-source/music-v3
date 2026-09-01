@@ -119,7 +119,7 @@
       </span>
 
       <% if (Number(song.is_hot)) { %>
-        <span class="song-hot-tag"><%= song.hot_label || 'HOT' %></span>
+        <span class="song-hot-tag" title="<%= song.hot_label || 'Hot' %>" aria-label="<%= song.hot_label || 'Hot' %>"></span>
       <% } %>
 
       <% if (song.image) { %>
