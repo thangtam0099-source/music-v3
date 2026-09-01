@@ -145,22 +145,27 @@ router.get('/songs/edit/:id', requireAdmin, async (req, res) => {
 // ── POST /admin/songs/add ───────────────────────
 // Nhận URL Cloudinary từ client (browser đã upload trực tiếp)
 router.post('/songs/add', requireAdmin, async (req, res) => {
-  const { title, artist, album, description, music_url, image_url } = req.body;
+  const { title, artist, album, description, music_url, image_url, is_hot, hot_label } = req.body;
 
   if (!title || !artist)
     return res.redirect('/admin/songs?message=Thiếu tên bài hoặc ca sĩ');
   if (!music_url)
     return res.redirect('/admin/songs?message=Vui lòng upload file mp3');
 
+  const hotFlag = is_hot === 'on' || is_hot === '1' || is_hot === true ? 1 : 0;
+  const label = hotFlag ? (hot_label?.trim() || 'HOT') : null;
+
   await db.execute(
-    `INSERT INTO music (title, artist, album, description, image, music_file)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO music (title, artist, album, description, image, music_file, is_hot, hot_label)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       title.trim(), artist.trim(),
       album?.trim()       || null,
       description?.trim() || null,
       image_url || null,
-      music_url
+      music_url,
+      hotFlag,
+      label
     ]
   );
   res.redirect('/admin/songs?message=Đã thêm bài hát thành công!');
@@ -172,14 +177,17 @@ router.post('/songs/edit/:id', requireAdmin, async (req, res) => {
   const song = rows[0];
   if (!song) return res.redirect('/admin/songs');
 
-  const { title, artist, album, description, music_url, image_url } = req.body;
+  const { title, artist, album, description, music_url, image_url, is_hot, hot_label } = req.body;
 
   // Nếu có URL mới → xóa file cũ trên Cloudinary
   if (music_url && music_url !== song.music_file) deleteFile(song.music_file);
   if (image_url && image_url !== song.image)      deleteFile(song.image);
 
+  const hotFlag = is_hot === 'on' || is_hot === '1' || is_hot === true ? 1 : 0;
+  const label = hotFlag ? (hot_label?.trim() || 'HOT') : null;
+
   await db.execute(
-    `UPDATE music SET title=?, artist=?, album=?, description=?, image=?, music_file=? WHERE id=?`,
+    `UPDATE music SET title=?, artist=?, album=?, description=?, image=?, music_file=?, is_hot=?, hot_label=? WHERE id=?`,
     [
       title?.trim()       || song.title,
       artist?.trim()      || song.artist,
@@ -187,6 +195,8 @@ router.post('/songs/edit/:id', requireAdmin, async (req, res) => {
       description?.trim() || null,
       image_url  || song.image,
       music_url  || song.music_file,
+      hotFlag,
+      label,
       req.params.id
     ]
   );

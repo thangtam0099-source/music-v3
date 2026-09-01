@@ -118,10 +118,9 @@
         <span class="song-equalizer"><i></i><i></i><i></i><i></i><i></i></span>
       </span>
 
-      <!-- Nút thêm vào playlist -->
-      <button class="add-pl-btn"
-              title="Thêm vào playlist"
-              onclick="event.stopPropagation(); togglePlaylistPopup(this, <%= song.id %>, '<%= song.title.replace(/'/g, "\\'") %>')">＋</button>
+      <% if (Number(song.is_hot)) { %>
+        <span class="song-hot-tag"><%= song.hot_label || 'HOT' %></span>
+      <% } %>
 
       <% if (song.image) { %>
         <img class="song-thumb" src="<%= song.image %>" alt="<%= song.title %>">
@@ -219,12 +218,14 @@
 <script>
 // Dữ liệu bài hát từ server
 const SONGS = <%- JSON.stringify(songs.map(s => ({
-  id:     s.id,
-  title:  s.title,
-  artist: s.artist,
-  album:  s.album || '',
-  image:  s.image || '',
-  src:    s.music_file
+  id:       s.id,
+  title:    s.title,
+  artist:   s.artist,
+  album:    s.album || '',
+  image:    s.image || '',
+  src:      s.music_file,
+  isHot:    Number(s.is_hot) === 1,
+  hotLabel: s.hot_label || 'HOT'
 }))) %>;
 </script>
 <script src="/js/player.js"></script>

@@ -42,6 +42,8 @@ async function initDB() {
       description TEXT,
       image       TEXT,
       music_file  TEXT    NOT NULL,
+      is_hot      INTEGER NOT NULL DEFAULT 0,
+      hot_label   TEXT,
       created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -82,6 +84,19 @@ async function initDB() {
       zalo_url         TEXT
     );
   `);
+
+  for (const column of [
+    'footer_title', 'footer_text', 'footer_copyright',
+    'facebook_url', 'messenger_url', 'zalo_url',
+    'is_hot', 'hot_label'
+  ]) {
+    try {
+      const isHotColumn = column === 'is_hot' ? 'INTEGER NOT NULL DEFAULT 0' : column === 'hot_label' ? 'TEXT' : 'TEXT';
+      await db.execute(`ALTER TABLE music ADD COLUMN ${column} ${isHotColumn}`);
+    } catch (err) {
+      if (!err.message.includes('duplicate column name')) throw err;
+    }
+  }
 
   for (const column of [
     'footer_title', 'footer_text', 'footer_copyright',

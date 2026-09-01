@@ -269,6 +269,16 @@
               <% } %>
             </div>
 
+            <!-- Tag Hot -->
+            <div class="form-group">
+              <label>Tag Hot</label>
+              <label style="display:flex;align-items:center;gap:8px;color:var(--gray);margin-bottom:8px;cursor:pointer;">
+                <input type="checkbox" name="is_hot" <%= editSong && Number(editSong.is_hot) ? 'checked' : '' %>>
+                <span>Đánh dấu là bài Hot</span>
+              </label>
+              <input type="text" name="hot_label" value="<%= editSong ? (editSong.hot_label || '') : 'HOT' %>" placeholder="Ví dụ: HOT, Trending, nổi bật">
+            </div>
+
             <!-- Mô tả -->
             <div class="form-group form-full">
               <label>Mô tả</label>
@@ -305,7 +315,12 @@
             <% songs.forEach(s => { %>
             <tr>
               <td><% if (s.image) { %><img class="thumb-sm" src="<%= s.image %>" alt=""><% } else { %><div class="thumb-placeholder">🎵</div><% } %></td>
-              <td><strong><%= s.title %></strong></td>
+              <td>
+                <strong><%= s.title %></strong>
+                <% if (Number(s.is_hot)) { %>
+                  <div style="margin-top:6px"><span style="display:inline-block;background:rgba(255,170,0,.14);color:#ffb648;border:1px solid rgba(255,170,0,.35);padding:4px 8px;border-radius:999px;font-size:0.72rem;font-weight:700"><%= s.hot_label || 'HOT' %></span></div>
+                <% } %>
+              </td>
               <td style="color:var(--gray)"><%= s.artist %></td>
               <td style="color:var(--gray);font-size:0.82rem"><%= s.album || '—' %></td>
               <td style="color:var(--gray);font-size:0.8rem;white-space:nowrap"><%= new Date(s.created_at).toLocaleDateString('vi-VN') %></td>
