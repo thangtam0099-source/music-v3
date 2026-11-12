@@ -8,6 +8,15 @@
       </svg>
     </button>
 
+    <a href="/" class="header-mobile-brand" aria-label="Tâm Music">
+      <% if (settings && settings.logo) { %>
+        <img src="<%= settings.logo %>" alt="Logo" class="header-mobile-logo">
+      <% } else { %>
+        <span class="header-mobile-icon">🎵</span>
+      <% } %>
+      <span class="header-mobile-name">Tâm Music</span>
+    </a>
+
     <div class="history-nav-group" aria-label="Lịch sử trang">
       <button type="button" class="history-btn" id="histBackBtn" onclick="window.history.back()" title="Quay lại" aria-label="Quay lại">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -39,7 +48,7 @@
           type="search"
           name="q"
           value="<%= typeof q !== 'undefined' ? q : '' %>"
-          placeholder="Tìm kiếm bài hát, ca sĩ, album..."
+          placeholder="Tìm bài hát, ca sĩ..."
           role="combobox"
           aria-autocomplete="list"
           aria-controls="searchSuggestions"
@@ -132,8 +141,8 @@
       </div>
     <% } else { %>
       <div class="header-auth-buttons">
-        <a href="/login" class="btn btn-sm btn-ghost">Đăng nhập</a>
-        <a href="/register" class="btn btn-sm btn-primary">Đăng ký</a>
+        <a href="/login" class="btn btn-sm btn-ghost header-login-ghost">Đăng nhập</a>
+        <a href="/register" class="btn btn-sm btn-primary header-register-btn">Đăng ký</a>
       </div>
     <% } %>
   </div>
