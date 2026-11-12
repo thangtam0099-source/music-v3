@@ -204,31 +204,7 @@
   }
 
   function filterLikedSongs() {
-    const catalog = document.getElementById('songsContainer');
-    if (!catalog) {
-      // If on another page, navigate home first
-      navigateToUrl('/#likedSongs');
-      return;
-    }
-
-    const cards = catalog.querySelectorAll('.song-interactive-card');
-    let count = 0;
-
-    cards.forEach(card => {
-      const id = Number(card.dataset.songId);
-      const isLiked = likedSongIds.has(id);
-      card.style.display = isLiked ? '' : 'none';
-      if (isLiked) count++;
-    });
-
-    const heading = document.querySelector('.catalog-heading');
-    if (heading) {
-      heading.innerHTML = `Bài hát đã yêu thích ❤️ (<span class="search-highlight">${count}</span>)`;
-    }
-
-    if (count === 0) {
-      showToast('Bạn chưa có bài hát nào được yêu thích!');
-    }
+    navigateToUrl('/favorites');
   }
   window.filterLikedSongs = filterLikedSongs;
 
@@ -951,9 +927,13 @@
     updateLikedBadge();
     syncLikeButtons();
 
-    // Restore user view preference
+    // Restore user view preference (default: 'list')
     const savedView = localStorage.getItem('tam_music_view');
-    if (savedView === 'list') switchViewMode('list');
+    if (savedView === 'grid') {
+      switchViewMode('grid');
+    } else {
+      switchViewMode('list');
+    }
   });
 
 })();

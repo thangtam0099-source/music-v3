@@ -69,6 +69,18 @@ router.get('/albums/:id', async (req, res) => {
   });
 });
 
+// Trang Bài hát yêu thích
+router.get('/favorites', async (req, res) => {
+  const { rows: songs } = await db.execute('SELECT * FROM music ORDER BY title COLLATE NOCASE ASC');
+  const { rows: settingsR } = await db.execute('SELECT * FROM settings WHERE id = 1');
+  res.render('favorites', {
+    user: req.session.user,
+    songs,
+    settings: settingsR[0] || {},
+    activeNav: 'favorites'
+  });
+});
+
 // Trang chủ: cho phép xem & nghe nhạc mà không cần đăng nhập
 router.get('/', async (req, res) => {
   const { q, sort } = req.query;

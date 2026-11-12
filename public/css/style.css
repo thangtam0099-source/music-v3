@@ -2698,6 +2698,7 @@ h1, h2, h3, h4, h5 {
   height: 18px;
 }
 
+.mini-btn-prev,
 .mini-btn-next {
   width: 32px;
   height: 32px;
@@ -2705,6 +2706,14 @@ h1, h2, h3, h4, h5 {
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+.mini-btn-prev:hover,
+.mini-btn-next:hover {
+  color: var(--text-primary);
 }
 
 /* ── MOBILE BOTTOM NAVIGATION ─────────────────────────────────── */
@@ -4207,9 +4216,15 @@ html, body {
     width: 16px;
     height: 16px;
   }
+  .mini-btn-prev,
   .mini-btn-next {
     width: 28px;
     height: 28px;
+  }
+  .mini-btn-prev svg,
+  .mini-btn-next svg {
+    width: 16px;
+    height: 16px;
   }
 
   /* Mobile bottom navigation */
