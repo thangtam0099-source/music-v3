@@ -1,69 +1,104 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đăng ký — Tâm Music</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <%- include('partials/head') %>
+  <title>Đăng ký tài khoản — Tâm Music</title>
 </head>
-<body>
+<body class="auth-page-body" <% if (settings && settings.login_background) { %> style="--auth-bg-img: url('<%= settings.login_background %>');" <% } %>>
 
-<div class="auth-page"
-  <% if (settings.login_background) { %>
-    style="background-image: url('<%= settings.login_background %>')"
-  <% } else { %>
-    style="background: linear-gradient(135deg, #111 0%, #1a2a1a 100%)"
-  <% } %>>
+  <div class="auth-container">
+    <div class="auth-card-box">
 
-  <div class="auth-box">
+      <div class="auth-card-header">
+        <a href="/" class="auth-brand" aria-label="Về trang chủ Tâm Music">
+          <% if (settings && settings.logo) { %>
+            <img src="<%= settings.logo %>" alt="Tâm Music" class="auth-brand-logo">
+          <% } else { %>
+            <span class="auth-brand-icon">🎵</span>
+          <% } %>
+          <span class="auth-brand-name">Tâm Music</span>
+        </a>
+        <h1 class="auth-heading">Tạo tài khoản mới</h1>
+        <p class="auth-subheading">Tham gia cùng cộng đồng yêu nhạc để tạo danh sách phát và lưu bài hát yêu thích.</p>
+      </div>
 
-    <div class="auth-logo">
-      <% if (settings.logo) { %>
-        <img src="<%= settings.logo %>" alt="Logo">
+      <% if (error) { %>
+        <div class="app-alert app-alert-error" role="alert">
+          <span class="alert-icon">⚠️</span>
+          <span class="alert-text"><%= error %></span>
+        </div>
       <% } %>
-      <h1>🎵 Tâm Music</h1>
+
+      <% if (success) { %>
+        <div class="app-alert app-alert-success" role="alert">
+          <span class="alert-icon">✓</span>
+          <span class="alert-text"><%= success %></span>
+        </div>
+      <% } %>
+
+      <form action="/register" method="POST" class="auth-form" autocomplete="on">
+        <div class="form-group-field">
+          <label for="username">Tên đăng nhập (tối thiểu 3 ký tự)</label>
+          <div class="input-with-icon">
+            <span class="input-icon">👤</span>
+            <input type="text" id="username" name="username" placeholder="Nhập username..." minlength="3" required autocomplete="username" autofocus>
+          </div>
+        </div>
+
+        <div class="form-group-field">
+          <label for="password">Mật khẩu (tối thiểu 6 ký tự)</label>
+          <div class="input-with-icon">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="password" name="password" placeholder="Tạo mật khẩu..." minlength="6" required autocomplete="new-password">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('password', this)" title="Hiện / Ẩn mật khẩu" aria-label="Hiện mật khẩu">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group-field">
+          <label for="confirm_password">Xác nhận mật khẩu</label>
+          <div class="input-with-icon">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="confirm_password" name="confirm_password" placeholder="Nhập lại mật khẩu..." minlength="6" required autocomplete="new-password">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('confirm_password', this)" title="Hiện / Ẩn mật khẩu" aria-label="Hiện mật khẩu">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-green btn-auth-submit">
+          <span>Đăng ký tài khoản</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </form>
+
+      <div class="auth-card-footer">
+        <p class="auth-switch-text">
+          Đã có tài khoản? <a href="/login" class="auth-highlight-link">Đăng nhập</a>
+        </p>
+        <a href="/" class="auth-back-home-link">← Quay lại trang chủ nghe nhạc</a>
+      </div>
+
     </div>
-
-    <h2>Tạo tài khoản mới</h2>
-
-    <% if (error) { %>
-      <div class="alert alert-error"><%= error %></div>
-    <% } %>
-
-    <% if (success) { %>
-      <div class="alert alert-success"><%= success %></div>
-    <% } %>
-
-    <form action="/register" method="POST">
-      <div class="form-group">
-        <label for="username">Tên đăng nhập</label>
-        <input type="text" id="username" name="username"
-               placeholder="Ít nhất 3 ký tự..." required minlength="3">
-      </div>
-
-      <div class="form-group">
-        <label for="password">Mật khẩu</label>
-        <input type="password" id="password" name="password"
-               placeholder="Ít nhất 6 ký tự..." required minlength="6">
-      </div>
-
-      <div class="form-group">
-        <label for="confirm_password">Xác nhận mật khẩu</label>
-        <input type="password" id="confirm_password" name="confirm_password"
-               placeholder="Nhập lại mật khẩu..." required>
-      </div>
-
-      <button type="submit" class="btn btn-primary">Đăng ký</button>
-    </form>
-
-    <div class="auth-footer">
-      Đã có tài khoản? <a href="/login">Đăng nhập</a>
-    </div>
-
   </div>
-</div>
 
-<%- include('partials/footer', { settings }) %>
-
+  <script>
+    function togglePasswordVisibility(inputId, btn) {
+      var input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+        btn.setAttribute('aria-label', 'Ẩn mật khẩu');
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+        btn.setAttribute('aria-label', 'Hiện mật khẩu');
+      }
+    }
+  </script>
 </body>
 </html>

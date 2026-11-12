@@ -1,21 +1,173 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="dark">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= album.name %> — Tâm Music</title>
-  <link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/playlist.css">
+  <%- include('partials/head') %>
+  <title><%= album.name %> — Album | Tâm Music</title>
 </head>
-<body <% if (settings.background) { %> style="background-image:url('<%= settings.background %>');background-size:cover;background-attachment:fixed;" <% } %>>
-<header class="site-header"><div class="header-inner">
-  <a class="logo" href="/"><% if (settings.logo) { %><img src="<%= settings.logo %>" alt="Logo"><% } else { %><span>🎵</span><% } %><span>Tâm Music</span></a>
-  <nav class="main-nav"><a href="/" class="nav-pill">Trang chủ</a><a href="/albums" class="nav-pill active">Album</a><a href="/playlists" class="nav-pill">Playlist</a></nav>
-  <div class="header-actions"><% if (user) { %><div class="user-badge">👤 <span><%= user.username %></span></div><a href="/logout" class="btn btn-secondary btn-sm">Đăng xuất</a><% } else { %><a href="/login" class="btn btn-secondary btn-sm">Đăng nhập</a><% } %></div>
-</div></header>
-<main class="main-content" style="padding-bottom:120px"><div class="breadcrumb"><a href="/albums">Album</a><span>›</span><span><%= album.name %></span></div>
-<div class="pl-hero album-hero"><div class="pl-hero-cover"><% if (album.thumbnail) { %><img src="<%= album.thumbnail %>" alt="<%= album.name %>"><% } else { %><div class="pl-hero-placeholder">💿</div><% } %></div><div class="pl-hero-info"><div class="pl-hero-label">Album</div><h1 class="pl-hero-title"><%= album.name %></h1><div class="pl-hero-meta"><%= songs.length %> bài hát<% if (album.description) { %> · <%= album.description %><% } %></div><div class="pl-hero-actions"><% if (songs.length) { %><button class="btn btn-green" onclick="playAll()">▶ Phát tất cả</button><button class="btn btn-outline" onclick="shufflePlay()">🔀 Ngẫu nhiên</button><% } %></div></div></div>
-<div class="pl-song-section"><div class="section-header"><h3>🎵 Danh sách bài (<%= songs.length %>)</h3></div><div class="pl-song-list album-song-list"><% songs.forEach(function(song, idx) { %><div class="pl-song-row" data-idx="<%= idx %>" onclick="playSong(<%= idx %>)"><div class="pl-song-num"><span class="num-label"><%= idx + 1 %></span><span class="play-label">▶</span></div><% if (song.image) { %><img class="thumb-sm" src="<%= song.image %>" alt=""><% } else { %><div class="thumb-placeholder">🎵</div><% } %><div class="pl-song-meta"><div class="pl-song-title"><%= song.title %></div><div class="pl-song-artist"><%= song.artist %></div></div><div class="pl-song-album"><%= song.album || '' %></div><span class="song-playing-indicator" aria-hidden="true"><span class="song-equalizer"><i></i><i></i><i></i><i></i><i></i></span></span></div><% }) %></div></div>
-</main>
-<%- include('partials/footer', { settings }) %>
-<div class="player-bar" id="playerBar"><div class="player-inner"><div class="player-info"><div id="playerCoverWrap"></div><div class="player-meta"><div class="title" id="playerTitle">—</div><div class="artist" id="playerArtist">—</div></div></div><div class="player-controls"><div class="control-buttons"><button class="ctrl-btn" onclick="prevSong()" title="Bài trước">◀</button><button class="ctrl-btn repeat-btn" onclick="toggleRepeat()" title="Lặp lại">↻</button><button class="ctrl-btn play-pause" id="playPauseBtn" onclick="togglePlay()"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><button class="ctrl-btn" onclick="nextSong()" title="Bài tiếp">▶</button></div><div class="progress-area"><span class="time-label" id="currentTime">0:00</span><input type="range" id="progressBar" min="0" max="100" value="0" oninput="seekTo(this.value)"><span class="time-label right" id="totalTime">0:00</span></div></div><div class="player-right"><div class="volume-area"><span class="vol-icon">🔊</span><input type="range" id="volumeBar" min="0" max="1" step="0.01" value="1" oninput="setVolume(this.value)"></div></div></div></div><audio id="audioPlayer" preload="metadata"></audio>
-<script>const SONGS = <%- JSON.stringify(songs.map(s => ({ id:s.id,title:s.title,artist:s.artist,album:s.album||'',image:s.image||'',src:s.music_file }))) %>; function playAll(){if(SONGS.length)playSong(0)} function shufflePlay(){if(SONGS.length)playSong(Math.floor(Math.random()*SONGS.length))}</script><script src="/js/player.js"></script>
-</body></html>
+<body class="app-body" <% if (settings && settings.background) { %> style="--custom-bg: url('<%= settings.background %>');" <% } %>>
+
+  <div class="app-layout">
+    <%- include('partials/sidebar', { user, settings, activeNav: 'albums' }) %>
+
+    <div class="app-main-viewport">
+      <%- include('partials/header', { user, settings }) %>
+
+      <main class="main-content" id="mainContent" role="main">
+
+        <!-- Breadcrumb -->
+        <nav class="app-breadcrumb" aria-label="Đường dẫn trang">
+          <a href="/albums">Album</a>
+          <span class="sep">/</span>
+          <span class="current"><%= album.name %></span>
+        </nav>
+
+        <!-- Album Hero Section -->
+        <div class="detail-hero-card">
+          <div class="detail-hero-cover-wrap">
+            <% if (album.thumbnail) { %>
+              <img class="detail-hero-cover" src="<%= album.thumbnail %>" alt="<%= album.name %>">
+            <% } else { %>
+              <div class="detail-hero-placeholder">💿</div>
+            <% } %>
+          </div>
+
+          <div class="detail-hero-info">
+            <span class="detail-type-badge">Album</span>
+            <h1 class="detail-title"><%= album.name %></h1>
+            <% if (album.description) { %>
+              <p class="detail-description"><%= album.description %></p>
+            <% } %>
+            <div class="detail-meta-row">
+              <span class="detail-stat"><strong><%= songs.length %></strong> bài hát</span>
+              <span class="meta-dot">·</span>
+              <span class="detail-stat">Tâm Music Tuyển chọn</span>
+            </div>
+
+            <div class="detail-action-buttons">
+              <% if (songs.length > 0) { %>
+                <button type="button" class="btn btn-green btn-hero-action" onclick="playAll()">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  <span>Phát tất cả</span>
+                </button>
+                <button type="button" class="btn btn-outline-white btn-hero-action" onclick="shufflePlay()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 3 21 3 21 8"></polyline>
+                    <line x1="4" y1="20" x2="21" y2="3"></line>
+                    <polyline points="21 16 21 21 16 21"></polyline>
+                    <line x1="15" y1="15" x2="21" y2="21"></line>
+                    <line x1="4" y1="4" x2="9" y2="9"></line>
+                  </svg>
+                  <span>Phát ngẫu nhiên</span>
+                </button>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Album Songs Tracklist Section -->
+        <section class="detail-tracklist-section">
+          <div class="section-title-bar">
+            <h2 class="section-heading">Danh sách bài hát (<%= songs.length %>)</h2>
+          </div>
+
+          <% if (songs.length === 0) { %>
+            <div class="empty-catalog-state">
+              <div class="empty-illustration">🎵</div>
+              <h3 class="empty-state-title">Album chưa có bài hát nào</h3>
+              <p class="empty-state-desc">Nội dung bài hát đang được chuẩn bị và sẽ cập nhật sớm.</p>
+              <a href="/albums" class="btn btn-primary btn-sm" style="margin-top: 12px;">← Quay lại danh sách album</a>
+            </div>
+          <% } else { %>
+            <div class="detail-songs-table">
+              <div class="table-header-row">
+                <span class="col-index">#</span>
+                <span class="col-main">Tiêu đề</span>
+                <span class="col-album">Album</span>
+                <span class="col-actions">Hành động</span>
+              </div>
+
+              <% songs.forEach(function(song, idx) { %>
+                <div class="track-list-row pl-song-row" data-song-id="<%= song.id %>" data-idx="<%= idx %>" onclick="playSong(<%= idx %>)">
+                  <div class="col-index">
+                    <span class="index-number"><%= idx + 1 %></span>
+                    <span class="row-play-icon">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    </span>
+                    <div class="row-equalizer-anim" aria-hidden="true">
+                      <span></span><span></span><span></span><span></span>
+                    </div>
+                  </div>
+
+                  <div class="col-main">
+                    <% if (song.image) { %>
+                      <img class="row-thumb" src="<%= song.image %>" alt="<%= song.title %>" loading="lazy">
+                    <% } else { %>
+                      <div class="row-thumb-placeholder">🎵</div>
+                    <% } %>
+                    <div class="row-title-group">
+                      <span class="row-title" title="<%= song.title %>"><%= song.title %></span>
+                      <span class="row-artist" title="<%= song.artist %>"><%= song.artist %></span>
+                    </div>
+                  </div>
+
+                  <div class="col-album">
+                    <span class="row-album-text" title="<%= song.album || '' %>"><%= song.album || '—' %></span>
+                  </div>
+
+                  <div class="col-actions" onclick="event.stopPropagation()">
+                    <button type="button" class="row-action-btn like-btn" onclick="toggleCardLike(this, <%= song.id %>)" title="Yêu thích">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+                      </svg>
+                    </button>
+                    <button type="button" class="row-action-btn playlist-btn" onclick="togglePlaylistPopup(this, <%= song.id %>, '<%= song.title.replace(/'/g, "\\'") %>')" title="Thêm vào playlist">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } %>
+        </section>
+
+        <%- include('partials/footer', { settings }) %>
+      </main>
+    </div>
+  </div>
+
+  <%- include('partials/player') %>
+  <%- include('partials/mobile_nav', { user, activeNav: 'albums' }) %>
+
+  <script>
+    window.SONGS = <%- JSON.stringify(songs.map(s => ({
+      id:       s.id,
+      title:    s.title,
+      artist:   s.artist,
+      album:    s.album || '',
+      image:    s.image || '',
+      src:      s.music_file,
+      isHot:    Number(s.is_hot) === 1,
+      hotLabel: s.hot_label || 'HOT'
+    }))) %>;
+
+    function playAll() {
+      if (window.SONGS && window.SONGS.length > 0) playSong(0);
+    }
+
+    function shufflePlay() {
+      if (window.SONGS && window.SONGS.length > 0) {
+        var randIdx = Math.floor(Math.random() * window.SONGS.length);
+        playSong(randIdx);
+      }
+    }
+  </script>
+  <script src="/js/player.js?v=4.0"></script>
+  <script src="/js/playlist.js?v=4.0"></script>
+  <script src="/js/search.js?v=4.0"></script>
+</body>
+</html>

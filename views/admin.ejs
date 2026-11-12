@@ -1,72 +1,190 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Admin — Tâm Music</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <%- include('partials/head') %>
+  <title>Quản trị hệ thống — Tâm Music</title>
   <style>
+    /* ── Admin Dashboard Overrides ── */
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+      background: var(--bg-canvas);
+    }
+    .sidebar {
+      width: 250px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+      padding: 0 8px;
+    }
+    .sidebar-logo img {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+    }
+    .sidebar-nav {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .nav-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      padding: 10px 12px 6px;
+    }
+    .sidebar .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: all var(--transition-fast);
+    }
+    .sidebar .nav-link:hover {
+      background: var(--bg-surface-hover);
+      color: var(--text-primary);
+    }
+    .sidebar .nav-link.active {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+    .sidebar .nav-link svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+    .sidebar-user {
+      margin-top: auto;
+      padding: 14px;
+      background: var(--bg-surface-elevated);
+      border-radius: var(--radius-md);
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+    .sidebar-user strong {
+      display: block;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+    .admin-main {
+      flex: 1;
+      padding: 32px 40px;
+      overflow-y: auto;
+      max-width: 1400px;
+    }
     /* ── Upload zone ── */
     .upload-zone {
-      border: 2px dashed var(--gray2);
-      border-radius: 10px;
-      padding: 20px;
+      border: 2px dashed var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: 24px;
       text-align: center;
       cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
+      transition: all var(--transition-fast);
       position: relative;
+      background: var(--bg-surface-elevated);
     }
     .upload-zone:hover, .upload-zone.dragover {
-      border-color: var(--green);
-      background: rgba(29,185,84,0.04);
+      border-color: var(--accent);
+      background: var(--accent-light);
     }
     .upload-zone input[type=file] {
       position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
-    .upload-zone .zone-label { font-size: 0.88rem; color: var(--gray); pointer-events: none; }
-    .upload-zone .zone-label strong { color: var(--green); }
+    .upload-zone .zone-label { font-size: 0.88rem; color: var(--text-secondary); pointer-events: none; }
+    .upload-zone .zone-label strong { color: var(--accent); }
 
     /* ── Upload progress ── */
     .upload-progress {
       display: none;
       margin-top: 10px;
-      background: var(--bg3);
-      border-radius: 6px;
+      background: var(--bg-surface-elevated);
+      border-radius: var(--radius-pill);
       overflow: hidden;
       height: 6px;
     }
     .upload-progress-bar {
       height: 100%;
-      background: var(--green);
+      background: var(--accent);
       width: 0%;
       transition: width 0.2s;
     }
     .upload-status {
       font-size: 0.8rem;
       margin-top: 6px;
-      color: var(--gray);
+      color: var(--text-muted);
       display: none;
     }
-    .upload-status.ok    { color: var(--green); }
-    .upload-status.error { color: #fc8181; }
+    .upload-status.ok    { color: var(--accent); }
+    .upload-status.error { color: var(--danger); }
 
     /* ── Preview ── */
-    .upload-preview { margin-top: 8px; border-radius: 8px; overflow: hidden; max-height: 120px; }
-    .upload-preview img { width: 100%; height: 120px; object-fit: cover; }
+    .upload-preview { margin-top: 8px; border-radius: var(--radius-md); overflow: hidden; max-height: 140px; }
+    .upload-preview img { width: 100%; height: 140px; object-fit: cover; }
 
     .current-file {
-      font-size: 0.78rem; color: var(--gray);
-      background: var(--bg3); padding: 4px 10px;
-      border-radius: 6px; margin-top: 6px; display: inline-flex;
+      font-size: 0.78rem; color: var(--text-secondary);
+      background: var(--bg-surface-elevated); padding: 4px 10px;
+      border-radius: var(--radius-xs); margin-top: 6px; display: inline-flex;
       align-items: center; gap: 6px;
     }
 
     /* Settings upload */
     .setting-upload-zone { margin-top: 8px; }
     .upload-form { display: flex; gap: 8px; align-items: flex-start; flex-direction: column; }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .form-group input, .form-group textarea, .form-group select {
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-medium);
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      font-size: 0.92rem;
+      outline: none;
+      font-family: inherit;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
   </style>
 </head>
-<body>
+<body class="app-body">
 
 <%
   // Cloudinary config truyền từ server (không expose secret)

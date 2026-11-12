@@ -1,19 +1,79 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="dark">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Album — Tâm Music</title>
-  <link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/playlist.css">
+  <%- include('partials/head') %>
+  <title>Album & Tuyển tập — Tâm Music</title>
 </head>
-<body <% if (settings.background) { %> style="background-image:url('<%= settings.background %>');background-size:cover;background-attachment:fixed;" <% } %>>
-<header class="site-header"><div class="header-inner">
-  <a class="logo" href="/"><% if (settings.logo) { %><img src="<%= settings.logo %>" alt="Logo"><% } else { %><span>🎵</span><% } %><span>Tâm Music</span></a>
-  <nav class="main-nav"><a href="/" class="nav-pill">Trang chủ</a><a href="/albums" class="nav-pill active">Album</a><a href="/playlists" class="nav-pill">Playlist</a></nav>
-  <div class="header-actions"><% if (user) { %><div class="user-badge">👤 <span><%= user.username %></span></div><a href="/logout" class="btn btn-secondary btn-sm">Đăng xuất</a><% } else { %><a href="/login" class="btn btn-secondary btn-sm">Đăng nhập</a><% } %></div>
-</div></header>
-<main class="main-content"><div class="section-header"><h2>Album (<%= albums.length %>)</h2></div>
-<% if (albums.length === 0) { %><div class="empty-state"><div class="empty-icon">💿</div><h3>Chưa có album nào</h3><p>Album mới sẽ xuất hiện tại đây.</p></div><% } else { %>
-<div class="playlist-grid album-grid"><% albums.forEach(album => { %><a href="/albums/<%= album.id %>" class="playlist-card album-card pl-card-link"><div class="pl-cover"><% if (album.thumbnail) { %><img src="<%= album.thumbnail %>" alt="<%= album.name %>"><% } else { %><div class="pl-cover-placeholder">💿</div><% } %><div class="pl-play-overlay">▶</div></div><div class="pl-info"><div class="pl-name"><%= album.name %></div><div class="pl-count"><%= album.song_count %> bài hát</div></div></a><% }) %></div><% } %>
-</main>
-<%- include('partials/footer', { settings }) %>
-</body></html>
+<body class="app-body" <% if (settings && settings.background) { %> style="--custom-bg: url('<%= settings.background %>');" <% } %>>
+
+  <div class="app-layout">
+    <%- include('partials/sidebar', { user, settings, activeNav: 'albums' }) %>
+
+    <div class="app-main-viewport">
+      <%- include('partials/header', { user, settings }) %>
+
+      <main class="main-content" id="mainContent" role="main">
+        <div class="page-title-banner">
+          <div class="page-title-group">
+            <span class="page-tag-label">Tuyển tập</span>
+            <h1 class="page-main-heading">Khám phá Album</h1>
+            <p class="page-subheading">Thưởng thức các album được tuyển chọn kỹ lưỡng theo từng chủ đề và phong cách âm nhạc.</p>
+          </div>
+          <span class="catalog-count-pill"><%= albums.length %> album</span>
+        </div>
+
+        <% if (albums.length === 0) { %>
+          <div class="empty-catalog-state">
+            <div class="empty-illustration">💿</div>
+            <h3 class="empty-state-title">Chưa có album nào</h3>
+            <p class="empty-state-desc">Các tuyển tập âm nhạc mới sẽ sớm được cập nhật tại đây.</p>
+            <a href="/" class="btn btn-primary btn-sm" style="margin-top: 12px;">← Quay về trang chủ</a>
+          </div>
+        <% } else { %>
+          <div class="albums-card-grid">
+            <% albums.forEach(function(album) { %>
+              <a href="/albums/<%= album.id %>" class="album-item-card">
+                <div class="album-item-cover-wrap">
+                  <% if (album.thumbnail) { %>
+                    <img class="album-item-cover" src="<%= album.thumbnail %>" alt="<%= album.name %>" loading="lazy">
+                  <% } else { %>
+                    <div class="album-item-placeholder">💿</div>
+                  <% } %>
+                  <div class="album-item-play-overlay">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="album-item-info">
+                  <h3 class="album-item-title" title="<%= album.name %>"><%= album.name %></h3>
+                  <div class="album-item-meta">
+                    <span class="album-track-count"><%= album.song_count %> bài hát</span>
+                    <% if (album.description) { %>
+                      <span class="album-dot-sep">·</span>
+                      <span class="album-desc-snippet" title="<%= album.description %>"><%= album.description %></span>
+                    <% } %>
+                  </div>
+                </div>
+              </a>
+            <% }); %>
+          </div>
+        <% } %>
+
+        <%- include('partials/footer', { settings }) %>
+      </main>
+    </div>
+  </div>
+
+  <%- include('partials/player') %>
+  <%- include('partials/mobile_nav', { user, activeNav: 'albums' }) %>
+
+  <script>
+    // Giữ danh sách nhạc nếu đã load trước đó
+    if (!window.SONGS) window.SONGS = [];
+  </script>
+  <script src="/js/player.js?v=4.0"></script>
+  <script src="/js/playlist.js?v=4.0"></script>
+  <script src="/js/search.js?v=4.0"></script>
+</body>
+</html>

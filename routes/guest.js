@@ -84,12 +84,18 @@ router.get('/', async (req, res) => {
   sql += sort === 'az' ? ' ORDER BY title ASC' : ' ORDER BY created_at DESC';
 
   const { rows: songs }    = await db.execute(sql, params);
+  const { rows: albums }   = await db.execute(`
+    SELECT a.*, COUNT(s.song_id) AS song_count
+    FROM albums a LEFT JOIN album_songs s ON s.album_id = a.id
+    GROUP BY a.id ORDER BY a.created_at DESC LIMIT 8
+  `);
   const { rows: settingsR } = await db.execute('SELECT * FROM settings WHERE id = 1');
   const settings = settingsR[0] || {};
 
   res.render('home', {
     user: req.session.user,
     songs,
+    albums: albums || [],
     settings,
     q:    q    || '',
     sort: sort || 'newest'

@@ -1,40 +1,71 @@
-/* SEARCH SUGGESTIONS — search.js */
+/* ═══════════════════════════════════════════════════════════════════════
+   TÂM MUSIC — SEARCH & AUTOCOMPLETE CONTROLLER (search.js v4.0)
+   - Debounced server suggestions
+   - Vietnamese diacritic-insensitive matching
+   - Keyboard navigation (Arrow keys, Enter, Escape)
+   - Global search shortcut (/ or Ctrl+K)
+   - Clear input button
+═══════════════════════════════════════════════════════════════════════ */
 
-const searchForm = document.querySelector('.search-bar');
-const searchInput = document.getElementById('searchInput');
-const suggestionsEl = document.getElementById('searchSuggestions');
-const suggestionsList = suggestionsEl ? suggestionsEl.querySelector('.suggestions-list') : null;
+(function () {
+  'use strict';
 
-if (searchForm && searchInput && suggestionsEl) {
-  let debounceTimer;
-  let requestController;
+  const searchForm = document.getElementById('searchForm');
+  const searchInput = document.getElementById('searchInput');
+  const suggestionsPopover = document.getElementById('searchSuggestions');
+  const suggestionsList = document.getElementById('suggestionsList');
+  const searchClearBtn = document.getElementById('searchClearBtn');
+
+  if (!searchInput || !suggestionsPopover) return;
+
+  let debounceTimer = null;
+  let abortController = null;
   let activeIndex = -1;
 
-  const escapeHtml = (value) => String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  // ── VIETNAMESE ACCENT REMOVER ──────────────────────────────────
+  function stripVietnamese(str) {
+    return (str || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .trim();
+  }
 
-  const highlight = (value, query) => {
-    const safeValue = escapeHtml(value || '');
-    const safeQuery = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return safeQuery ? safeValue.replace(new RegExp(`(${safeQuery})`, 'gi'), '<mark>$1</mark>') : safeValue;
-  };
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
-  const closeSuggestions = () => {
-    suggestionsEl.classList.remove('visible');
-    suggestionsList.innerHTML = '';
+  function highlightMatch(text, query) {
+    if (!query) return escapeHtml(text);
+    const safeText = escapeHtml(text || '');
+    const cleanQuery = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    try {
+      const regex = new RegExp(`(${cleanQuery})`, 'gi');
+      return safeText.replace(regex, '<mark class="highlight">$1</mark>');
+    } catch (e) {
+      return safeText;
+    }
+  }
+
+  function closeSuggestions() {
+    suggestionsPopover.classList.remove('visible');
+    if (suggestionsList) suggestionsList.innerHTML = '';
     searchInput.setAttribute('aria-expanded', 'false');
     searchInput.removeAttribute('aria-activedescendant');
     activeIndex = -1;
-  };
+  }
 
-  const updateActiveSuggestion = () => {
-    const items = suggestionsEl.querySelectorAll('.suggestion-item');
-    items.forEach((item, index) => {
-      const isActive = index === activeIndex;
+  function updateActiveItem() {
+    const items = suggestionsPopover.querySelectorAll('.suggestion-row-item');
+    items.forEach((item, idx) => {
+      const isActive = idx === activeIndex;
       item.classList.toggle('active', isActive);
       item.setAttribute('aria-selected', String(isActive));
     });
@@ -45,95 +76,171 @@ if (searchForm && searchInput && suggestionsEl) {
     } else {
       searchInput.removeAttribute('aria-activedescendant');
     }
-  };
+  }
 
-  const selectSuggestion = (item) => {
-    searchInput.value = item.querySelector('.suggestion-title').textContent;
+  function selectItem(item) {
+    const title = item.dataset.title || '';
+    const songId = item.dataset.id;
+    searchInput.value = title;
     closeSuggestions();
-    searchForm.requestSubmit();
-  };
 
-  const renderSuggestions = (suggestions, query) => {
+    // Check if song is in current window.SONGS array to play immediately
+    if (window.SONGS && window.SONGS.length) {
+      const songIdx = window.SONGS.findIndex(s => String(s.id) === String(songId));
+      if (songIdx !== -1 && typeof window.playSong === 'function') {
+        window.playSong(songIdx);
+        return;
+      }
+    }
+
+    if (searchForm) searchForm.submit();
+  }
+
+  function renderSuggestions(list, query) {
     activeIndex = -1;
-    if (suggestions.length === 0) {
-      suggestionsList.innerHTML = '<div class="suggestion-empty"><span class="suggestion-empty-icon">⌕</span><span>Không tìm thấy kết quả phù hợp</span></div>';
+    if (!suggestionsList) return;
+
+    if (!list || list.length === 0) {
+      suggestionsList.innerHTML = `
+        <div class="suggestion-empty-state">
+          <span class="empty-icon">⌕</span>
+          <span>Không tìm thấy kết quả phù hợp cho "${escapeHtml(query)}"</span>
+        </div>
+      `;
     } else {
-      suggestionsList.innerHTML = suggestions.map((song, index) => `
-        <button type="button" class="suggestion-item" role="option" id="suggestion-${song.id}-${index}"
-                data-title="${escapeHtml(song.title)}" aria-selected="false">
-          ${song.image
-            ? `<img src="${escapeHtml(song.image)}" alt="">`
-            : '<span class="suggestion-placeholder">🎵</span>'}
-          <span class="suggestion-copy">
-            <span class="suggestion-title">${highlight(song.title, query)}</span>
-            <span class="suggestion-meta">${highlight(song.artist, query)}${song.album ? ` · ${highlight(song.album, query)}` : ''}</span>
-          </span>
-        </button>
+      suggestionsList.innerHTML = list.map((song, idx) => `
+        <div class="suggestion-row-item" role="option" id="suggest-opt-${song.id}-${idx}"
+             data-id="${song.id}" data-title="${escapeHtml(song.title)}" aria-selected="false">
+          <div class="suggest-thumb">
+            ${song.image ? `<img src="${escapeHtml(song.image)}" alt="">` : '<div class="suggest-thumb-placeholder">🎵</div>'}
+          </div>
+          <div class="suggest-meta">
+            <span class="suggest-title">${highlightMatch(song.title, query)}</span>
+            <span class="suggest-subtitle">${highlightMatch(song.artist, query)}${song.album ? ' · ' + highlightMatch(song.album, query) : ''}</span>
+          </div>
+          <button type="button" class="suggest-play-btn" aria-label="Phát ngay">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </div>
       `).join('');
 
-      suggestionsList.querySelectorAll('.suggestion-item').forEach((item) => {
-        item.addEventListener('click', () => selectSuggestion(item));
+      suggestionsList.querySelectorAll('.suggestion-row-item').forEach(item => {
+        item.addEventListener('click', () => selectItem(item));
       });
     }
 
-    suggestionsEl.classList.add('visible');
+    suggestionsPopover.classList.add('visible');
     searchInput.setAttribute('aria-expanded', 'true');
-  };
+  }
 
-  const fetchSuggestions = async (query) => {
-    if (requestController) requestController.abort();
-    requestController = new AbortController();
-    suggestionsList.innerHTML = '<div class="suggestion-loading"><span></span><span></span><span></span><em>Đang tìm...</em></div>';
-    suggestionsEl.classList.add('visible');
+  async function fetchSuggestions(query) {
+    if (abortController) abortController.abort();
+    abortController = new AbortController();
+
+    if (suggestionsList) {
+      suggestionsList.innerHTML = `
+        <div class="suggestion-loading-state">
+          <div class="loading-spinner"></div>
+          <span>Đang tìm kiếm...</span>
+        </div>
+      `;
+    }
+    suggestionsPopover.classList.add('visible');
     searchInput.setAttribute('aria-expanded', 'true');
 
     try {
-      const response = await fetch(`/api/search-suggestions?q=${encodeURIComponent(query)}`, {
-        signal: requestController.signal,
+      const res = await fetch(`/api/search-suggestions?q=${encodeURIComponent(query)}`, {
+        signal: abortController.signal,
         headers: { Accept: 'application/json' }
       });
-      if (!response.ok) throw new Error(`Suggestions request failed: ${response.status}`);
-      const data = await response.json();
-      if (searchInput.value.trim() === query) renderSuggestions(data.suggestions || [], query);
-    } catch (error) {
-      if (error.name !== 'AbortError') closeSuggestions();
-    }
-  };
+      if (!res.ok) throw new Error('Search failed');
+      const data = await res.json();
 
+      if (searchInput.value.trim() === query) {
+        renderSuggestions(data.suggestions || [], query);
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        closeSuggestions();
+      }
+    }
+  }
+
+  // ── INPUT LISTENERS ────────────────────────────────────────────
   searchInput.addEventListener('input', () => {
     const query = searchInput.value.trim();
+    if (searchClearBtn) {
+      searchClearBtn.style.display = query.length > 0 ? 'flex' : 'none';
+    }
+
     clearTimeout(debounceTimer);
     closeSuggestions();
 
     if (!query) return;
-    debounceTimer = setTimeout(() => fetchSuggestions(query), 250);
+    debounceTimer = setTimeout(() => fetchSuggestions(query), 220);
   });
 
-  searchInput.addEventListener('keydown', (event) => {
-    const items = suggestionsEl.querySelectorAll('.suggestion-item');
-    if (!suggestionsEl.classList.contains('visible') || items.length === 0) {
-      if (event.key === 'Escape') closeSuggestions();
+  searchInput.addEventListener('keydown', e => {
+    const items = suggestionsPopover.querySelectorAll('.suggestion-row-item');
+    if (!suggestionsPopover.classList.contains('visible') || items.length === 0) {
+      if (e.key === 'Escape') closeSuggestions();
       return;
     }
 
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
       activeIndex = (activeIndex + 1) % items.length;
-      updateActiveSuggestion();
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
+      updateActiveItem();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
       activeIndex = activeIndex <= 0 ? items.length - 1 : activeIndex - 1;
-      updateActiveSuggestion();
-    } else if (event.key === 'Enter' && activeIndex >= 0) {
-      event.preventDefault();
-      selectSuggestion(items[activeIndex]);
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
+      updateActiveItem();
+    } else if (e.key === 'Enter') {
+      if (activeIndex >= 0 && items[activeIndex]) {
+        e.preventDefault();
+        selectItem(items[activeIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
       closeSuggestions();
     }
   });
 
-  document.addEventListener('click', (event) => {
-    if (!searchForm.contains(event.target)) closeSuggestions();
+  // Clear button click
+  if (searchClearBtn) {
+    searchClearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      searchClearBtn.style.display = 'none';
+      closeSuggestions();
+      searchInput.focus();
+    });
+  }
+
+  // Global Keyboard shortcut (/ or Ctrl+K)
+  document.addEventListener('keydown', e => {
+    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+    if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
   });
-}
+
+  // Click outside to close
+  document.addEventListener('click', e => {
+    if (searchForm && !searchForm.contains(e.target)) {
+      closeSuggestions();
+    }
+  });
+
+  // Mobile search tab trigger
+  window.focusMobileSearch = function () {
+    if (searchInput) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      searchInput.focus();
+      searchInput.select();
+    }
+  };
+
+})();

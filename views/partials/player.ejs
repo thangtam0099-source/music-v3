@@ -1,0 +1,402 @@
+<!-- ══ PERSISTENT BOTTOM PLAYER BAR (DESKTOP / TABLET) ══════════════ -->
+<div class="app-player-bar" id="playerBar" role="region" aria-label="Trình phát nhạc">
+  <div class="player-container">
+
+    <!-- [1] Track Information -->
+    <div class="player-track-info">
+      <div class="player-cover-container" id="playerCoverWrap" onclick="openNowPlayingModal()" title="Mở giao diện Đang phát" role="button" tabindex="0">
+        <div class="player-cover-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+        </div>
+      </div>
+      <div class="player-text-group">
+        <div class="player-track-title" id="playerTitle" onclick="openNowPlayingModal()" role="button" tabindex="0">—</div>
+        <div class="player-track-artist" id="playerArtist">—</div>
+      </div>
+      <button type="button" class="player-action-icon-btn heart-btn" id="playerLikeBtn" onclick="toggleCurrentSongLike()" title="Yêu thích bài này" aria-label="Yêu thích bài này">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+        </svg>
+      </button>
+      <button type="button" class="player-action-icon-btn add-btn" id="playerAddPlBtn" onclick="openAddToPlaylistFromPlayer()" title="Thêm vào playlist" aria-label="Thêm vào playlist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- [2] Playback Controls & Progress Bar -->
+    <div class="player-center-controls">
+      <div class="player-buttons-row">
+        <!-- Shuffle button -->
+        <button type="button" class="ctrl-icon-btn" id="shuffleBtn" onclick="toggleShuffle()" title="Phát ngẫu nhiên" aria-label="Phát ngẫu nhiên" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 3 21 3 21 8"></polyline>
+            <line x1="4" y1="20" x2="21" y2="3"></line>
+            <polyline points="21 16 21 21 16 21"></polyline>
+            <line x1="15" y1="15" x2="21" y2="21"></line>
+            <line x1="4" y1="4" x2="9" y2="9"></line>
+          </svg>
+        </button>
+
+        <!-- Previous Track button -->
+        <button type="button" class="ctrl-icon-btn" onclick="prevSong()" title="Bài trước (Phím tắt: Mũi tên trái)" aria-label="Bài trước">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="19 20 9 12 19 4 19 20"></polygon>
+            <line x1="5" y1="19" x2="5" y2="5"></line>
+          </svg>
+        </button>
+
+        <!-- Main Play/Pause button -->
+        <button type="button" class="ctrl-play-pause-btn" id="playPauseBtn" onclick="togglePlay()" title="Phát / Tạm dừng (Phím tắt: Space)" aria-label="Phát nhạc">
+          <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </button>
+
+        <!-- Next Track button -->
+        <button type="button" class="ctrl-icon-btn" onclick="nextSong()" title="Bài tiếp theo (Phím tắt: Mũi tên phải)" aria-label="Bài tiếp theo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 4 15 12 5 20 5 4"></polygon>
+            <line x1="19" y1="5" x2="19" y2="19"></line>
+          </svg>
+        </button>
+
+        <!-- Repeat button -->
+        <button type="button" class="ctrl-icon-btn repeat-btn" id="repeatBtn" onclick="toggleRepeat()" title="Lặp lại bài hát" aria-label="Lặp lại bài hát" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 1 21 5 17 9"></polyline>
+            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+            <polyline points="7 23 3 19 7 15"></polyline>
+            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+          </svg>
+          <span class="repeat-one-badge" id="repeatOneBadge">1</span>
+        </button>
+      </div>
+
+      <!-- Scrubbable Progress Bar -->
+      <div class="player-progress-bar-wrap">
+        <span class="time-stamp-display" id="currentTime">0:00</span>
+        <div class="custom-range-slider-wrap">
+          <input
+            type="range"
+            id="progressBar"
+            class="seek-slider"
+            min="0"
+            max="100"
+            step="0.1"
+            value="0"
+            oninput="seekTo(this.value)"
+            aria-label="Tiến độ bài hát"
+          >
+          <div class="slider-fill-track" id="progressFillTrack"></div>
+        </div>
+        <span class="time-stamp-display" id="totalTime">0:00</span>
+      </div>
+    </div>
+
+    <!-- [3] Utilities (Volume, Queue, Lyrics, Fullscreen) -->
+    <div class="player-utilities-group">
+      <!-- Lyrics toggle button -->
+      <button type="button" class="util-btn" id="lyricsToggleBtn" onclick="toggleLyricsDrawer()" title="Lời bài hát" aria-label="Lời bài hát">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="22"></line>
+        </svg>
+      </button>
+
+      <!-- Queue toggle button -->
+      <button type="button" class="util-btn" id="queueToggleBtn" onclick="toggleQueueDrawer()" title="Danh sách chờ phát" aria-label="Danh sách chờ phát">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6"></line>
+          <line x1="8" y1="12" x2="21" y2="12"></line>
+          <line x1="8" y1="18" x2="21" y2="18"></line>
+          <line x1="3" y1="6" x2="3.01" y2="6"></line>
+          <line x1="3" y1="12" x2="3.01" y2="12"></line>
+          <line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+      </button>
+
+      <!-- Volume control -->
+      <div class="volume-slider-container">
+        <button type="button" class="util-btn" id="muteToggleBtn" onclick="toggleMute()" title="Tắt / Bật tiếng (Phím tắt: M)" aria-label="Tắt tiếng">
+          <svg id="volumeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+        </button>
+        <div class="custom-range-slider-wrap volume-slider-wrap">
+          <input
+            type="range"
+            id="volumeBar"
+            class="seek-slider volume-slider"
+            min="0"
+            max="1"
+            step="0.01"
+            value="1"
+            oninput="setVolume(this.value)"
+            aria-label="Âm lượng"
+          >
+          <div class="slider-fill-track" id="volumeFillTrack" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Expand Now Playing button -->
+      <button type="button" class="util-btn" onclick="openNowPlayingModal()" title="Toàn màn hình / Mở rộng" aria-label="Mở rộng giao diện phát">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <polyline points="9 21 3 21 3 15"></polyline>
+          <line x1="21" y1="3" x2="14" y2="10"></line>
+          <line x1="3" y1="21" x2="10" y2="14"></line>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MOBILE MINI PLAYER (DOCKED ABOVE MOBILE BOTTOM NAV) ═══════════ -->
+<div class="mobile-mini-player" id="mobileMiniPlayer" onclick="openNowPlayingModal()" role="button" tabindex="0" aria-label="Mở trình phát nhạc toàn màn hình">
+  <!-- Thin progress line at top of mini player -->
+  <div class="mini-player-progress-line" id="miniPlayerProgressLine" style="width: 0%;"></div>
+
+  <div class="mini-player-body">
+    <div class="mini-player-cover" id="miniPlayerCover">
+      <div class="player-cover-placeholder">🎵</div>
+    </div>
+    <div class="mini-player-info">
+      <div class="mini-player-title" id="miniPlayerTitle">Chưa chọn bài hát</div>
+      <div class="mini-player-artist" id="miniPlayerArtist">Tâm Music</div>
+    </div>
+    <div class="mini-player-actions" onclick="event.stopPropagation()">
+      <button type="button" class="mini-btn-play-pause" id="miniPlayPauseBtn" onclick="togglePlay()" aria-label="Phát / Tạm dừng">
+        <svg id="miniPlayIcon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </button>
+      <button type="button" class="mini-btn-next" onclick="nextSong()" aria-label="Bài tiếp theo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 4 15 12 5 20 5 4"></polygon>
+          <line x1="19" y1="5" x2="19" y2="19"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EXPANDED NOW PLAYING SHEET / MODAL (FULL-SCREEN MOBILE & MODAL DESKTOP) ══ -->
+<div class="now-playing-modal" id="nowPlayingModal" role="dialog" aria-modal="true" aria-label="Đang phát nhạc">
+  <!-- Dynamic blurred backdrop derived from artwork -->
+  <div class="now-playing-backdrop" id="nowPlayingBackdrop"></div>
+  <div class="now-playing-overlay-shade"></div>
+
+  <div class="now-playing-content">
+    <!-- Top Modal Bar -->
+    <div class="now-playing-header">
+      <button type="button" class="now-playing-dismiss-btn" onclick="closeNowPlayingModal()" aria-label="Thu nhỏ trình phát">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div class="now-playing-header-title">
+        <span class="sub-label">ĐANG PHÁT TỪ</span>
+        <span class="main-label" id="nowPlayingSourceLabel">Tâm Music</span>
+      </div>
+      <button type="button" class="now-playing-more-btn" onclick="toggleQueueDrawer()" aria-label="Danh sách phát">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6"></line>
+          <line x1="8" y1="12" x2="21" y2="12"></line>
+          <line x1="8" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Album Artwork Card with soft glow -->
+    <div class="now-playing-artwork-wrap">
+      <div class="now-playing-art-card" id="nowPlayingArtCard">
+        <div class="now-playing-art-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metadata & Favorite -->
+    <div class="now-playing-meta-row">
+      <div class="now-playing-text">
+        <h2 class="now-playing-title" id="nowPlayingTitle">—</h2>
+        <p class="now-playing-artist" id="nowPlayingArtist">—</p>
+      </div>
+      <button type="button" class="now-playing-like-btn" id="modalLikeBtn" onclick="toggleCurrentSongLike()" aria-label="Yêu thích bài hát">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Touch Seek Bar -->
+    <div class="now-playing-scrub-section">
+      <div class="custom-range-slider-wrap touch-slider-wrap">
+        <input
+          type="range"
+          id="modalProgressBar"
+          class="seek-slider touch-slider"
+          min="0"
+          max="100"
+          step="0.1"
+          value="0"
+          oninput="seekTo(this.value)"
+          aria-label="Tiến độ bài hát"
+        >
+        <div class="slider-fill-track" id="modalProgressFillTrack"></div>
+      </div>
+      <div class="now-playing-time-stamps">
+        <span id="modalCurrentTime">0:00</span>
+        <span id="modalTotalTime">0:00</span>
+      </div>
+    </div>
+
+    <!-- Large Touch Controls -->
+    <div class="now-playing-controls-row">
+      <button type="button" class="modal-ctrl-btn" id="modalShuffleBtn" onclick="toggleShuffle()" aria-label="Phát ngẫu nhiên">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 3 21 3 21 8"></polyline>
+          <line x1="4" y1="20" x2="21" y2="3"></line>
+          <polyline points="21 16 21 21 16 21"></polyline>
+          <line x1="15" y1="15" x2="21" y2="21"></line>
+          <line x1="4" y1="4" x2="9" y2="9"></line>
+        </svg>
+      </button>
+
+      <button type="button" class="modal-ctrl-btn prev-btn" onclick="prevSong()" aria-label="Bài trước">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="19 20 9 12 19 4 19 20"></polygon>
+          <line x1="5" y1="19" x2="5" y2="5"></line>
+        </svg>
+      </button>
+
+      <button type="button" class="modal-play-btn" id="modalPlayPauseBtn" onclick="togglePlay()" aria-label="Phát / Tạm dừng">
+        <svg id="modalPlayIcon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </button>
+
+      <button type="button" class="modal-ctrl-btn next-btn" onclick="nextSong()" aria-label="Bài tiếp theo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 4 15 12 5 20 5 4"></polygon>
+          <line x1="19" y1="5" x2="19" y2="19"></line>
+        </svg>
+      </button>
+
+      <button type="button" class="modal-ctrl-btn repeat-btn" id="modalRepeatBtn" onclick="toggleRepeat()" aria-label="Lặp lại bài hát">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 1 21 5 17 9"></polyline>
+          <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+          <polyline points="7 23 3 19 7 15"></polyline>
+          <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Bottom Secondary Actions -->
+    <div class="now-playing-bottom-row">
+      <button type="button" class="modal-secondary-action-btn" onclick="toggleLyricsDrawer()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+        </svg>
+        <span>Lời bài hát</span>
+      </button>
+
+      <button type="button" class="modal-secondary-action-btn" onclick="toggleQueueDrawer()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6"></line>
+          <line x1="8" y1="12" x2="21" y2="12"></line>
+          <line x1="8" y1="18" x2="21" y2="18"></line>
+        </svg>
+        <span>Danh sách chờ</span>
+      </button>
+
+      <button type="button" class="modal-secondary-action-btn" onclick="openAddToPlaylistFromPlayer()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Thêm vào playlist</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ CONTEXTUAL SLIDE-OUT QUEUE DRAWER ═════════════════════════════ -->
+<aside class="app-drawer queue-drawer" id="queueDrawer" aria-label="Danh sách chờ phát">
+  <div class="drawer-header">
+    <div class="drawer-title-group">
+      <h3 class="drawer-title">Danh sách chờ phát</h3>
+      <span class="drawer-subtitle" id="queueCount">0 bài hát</span>
+    </div>
+    <div class="drawer-header-actions">
+      <button type="button" class="drawer-action-btn" onclick="toggleShuffle()" title="Trộn danh sách">🔀 Trộn</button>
+      <button type="button" class="drawer-close-btn" onclick="closeQueueDrawer()" aria-label="Đóng danh sách chờ">✕</button>
+    </div>
+  </div>
+
+  <div class="drawer-body">
+    <div class="queue-section-label">Đang phát</div>
+    <div class="queue-current-card" id="queueCurrentTrack">
+      <div class="queue-card-meta">
+        <span class="queue-title" id="queueCurrentTitle">—</span>
+        <span class="queue-artist" id="queueCurrentArtist">—</span>
+      </div>
+      <div class="queue-playing-waves" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <div class="queue-section-label">Tiếp theo trong danh sách</div>
+    <div class="queue-list" id="queueListContainer">
+      <!-- Generated dynamically by player.js -->
+    </div>
+  </div>
+</aside>
+
+<!-- ══ CONTEXTUAL SLIDE-OUT LYRICS DRAWER ════════════════════════════ -->
+<aside class="app-drawer lyrics-drawer" id="lyricsDrawer" aria-label="Lời bài hát">
+  <div class="drawer-header">
+    <div class="drawer-title-group">
+      <h3 class="drawer-title">Lời bài hát & Thông tin</h3>
+      <span class="drawer-subtitle" id="lyricsTrackInfo">—</span>
+    </div>
+    <button type="button" class="drawer-close-btn" onclick="closeLyricsDrawer()" aria-label="Đóng bảng lời bài hát">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="lyrics-card">
+      <div class="lyrics-visualizer" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="lyrics-text" id="lyricsContent">
+        <p class="lyrics-hint">🎵 Thưởng thức giai điệu tuyệt vời từ Tâm Music</p>
+        <p class="lyrics-credit" id="lyricsArtistCredit"></p>
+        <p class="lyrics-album-credit" id="lyricsAlbumCredit"></p>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeAllDrawers()"></div>
+
+<!-- ══ HIDDEN HTML5 AUDIO ELEMENT ═══════════════════════════════════ -->
+<audio id="audioPlayer" preload="metadata"></audio>
+
+<!-- ══ TOAST NOTIFICATION CONTAINER ═════════════════════════════════ -->
+<div class="app-toast-container" id="toastContainer" aria-live="polite"></div>
