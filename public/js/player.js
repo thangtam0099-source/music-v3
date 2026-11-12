@@ -112,35 +112,9 @@
     applyTheme(next);
   }
 
-  // ── TEXT MARQUEE ANIMATION ─────────────────────────────────────
-  function setupTextMarquee(el) {
-    if (!el || !(el instanceof HTMLElement)) return;
-    const text = (el.dataset.fullText || el.textContent || '').trim();
-    if (!text) return;
-
-    el.dataset.fullText = text;
-    const overflow = el.scrollWidth > el.clientWidth + 2;
-
-    if (!overflow) {
-      el.textContent = text;
-      el.classList.remove('has-marquee');
-      return;
-    }
-
-    el.classList.add('has-marquee');
-    el.innerHTML = `
-      <div class="marquee-track">
-        <span class="marquee-text">${text}</span>
-        <span class="marquee-spacer"> &nbsp;•&nbsp; </span>
-        <span class="marquee-text" aria-hidden="true">${text}</span>
-        <span class="marquee-spacer"> &nbsp;•&nbsp; </span>
-      </div>
-    `;
-  }
-
+  // ── TEXT DISPLAY HELPER ────────────────────────────────────────
   function refreshAllMarquees() {
-    if (playerTitle) setupTextMarquee(playerTitle);
-    if (miniPlayerTitle) setupTextMarquee(miniPlayerTitle);
+    // Native CSS ellipsis handles responsive text overflow seamlessly
   }
 
   // ── TOAST NOTIFICATION SYSTEM ──────────────────────────────────
@@ -356,6 +330,49 @@
   }
   window.nextSong = nextSong;
 
+  function playAll() {
+    const songList = window.SONGS || [];
+    if (!songList.length) {
+      showToast('Danh sách bài hát trống', true);
+      return;
+    }
+    if (isShuffled) {
+      isShuffled = false;
+      const shuffleBtn = document.getElementById('shuffleBtn');
+      const modalShuffleBtn = document.getElementById('modalShuffleBtn');
+      [shuffleBtn, modalShuffleBtn].forEach(btn => {
+        if (btn) {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-pressed', 'false');
+        }
+      });
+    }
+    playSong(0);
+  }
+  window.playAll = playAll;
+
+  function shufflePlay() {
+    const songList = window.SONGS || [];
+    if (!songList.length) {
+      showToast('Danh sách bài hát trống', true);
+      return;
+    }
+    if (!isShuffled) {
+      isShuffled = true;
+      const shuffleBtn = document.getElementById('shuffleBtn');
+      const modalShuffleBtn = document.getElementById('modalShuffleBtn');
+      [shuffleBtn, modalShuffleBtn].forEach(btn => {
+        if (btn) {
+          btn.classList.add('active');
+          btn.setAttribute('aria-pressed', 'true');
+        }
+      });
+    }
+    const randIdx = Math.floor(Math.random() * songList.length);
+    playSong(randIdx);
+  }
+  window.shufflePlay = shufflePlay;
+
   function seekTo(val) {
     if (!audio.duration) return;
     const time = (val / 100) * audio.duration;
@@ -451,24 +468,39 @@
   }
 
   function updatePlayerMeta(song) {
-    if (playerTitle) playerTitle.textContent = song.title || '—';
-    if (playerArtist) playerArtist.textContent = song.artist || '—';
+    if (!song) return;
+    const title = song.title || '—';
+    const artist = song.artist || '—';
 
-    if (miniPlayerTitle) miniPlayerTitle.textContent = song.title || '—';
-    if (miniPlayerArtist) miniPlayerArtist.textContent = song.artist || '—';
+    // Desktop Player Bar
+    if (playerTitle) {
+      playerTitle.textContent = title;
+      playerTitle.setAttribute('title', title);
+    }
+    if (playerArtist) {
+      playerArtist.textContent = artist;
+      playerArtist.setAttribute('title', artist);
+    }
 
-    if (nowPlayingTitle) nowPlayingTitle.textContent = song.title || '—';
-    if (nowPlayingArtist) nowPlayingArtist.textContent = song.artist || '—';
+    // Mobile Mini Player
+    if (miniPlayerTitle) {
+      miniPlayerTitle.textContent = title;
+      miniPlayerTitle.setAttribute('title', title);
+    }
+    if (miniPlayerArtist) {
+      miniPlayerArtist.textContent = artist;
+      miniPlayerArtist.setAttribute('title', artist);
+    }
 
-    refreshAllMarquees();
-
-    // Lyrics info
-    const lyricsTrackInfo = document.getElementById('lyricsTrackInfo');
-    const lyricsArtist = document.getElementById('lyricsArtistCredit');
-    const lyricsAlbum = document.getElementById('lyricsAlbumCredit');
-    if (lyricsTrackInfo) lyricsTrackInfo.textContent = `${song.title} — ${song.artist}`;
-    if (lyricsArtist) lyricsArtist.textContent = `Nghệ sĩ: ${song.artist}`;
-    if (lyricsAlbum) lyricsAlbum.textContent = song.album ? `Album: ${song.album}` : '';
+    // Expanded Now Playing Modal
+    if (nowPlayingTitle) {
+      nowPlayingTitle.textContent = title;
+      nowPlayingTitle.setAttribute('title', title);
+    }
+    if (nowPlayingArtist) {
+      nowPlayingArtist.textContent = artist;
+      nowPlayingArtist.setAttribute('title', artist);
+    }
   }
 
   function updateCover(imgSrc) {
@@ -645,7 +677,6 @@
   function toggleQueueDrawer() {
     const drawer = document.getElementById('queueDrawer');
     const backdrop = document.getElementById('drawerBackdrop');
-    closeLyricsDrawer();
 
     if (drawer) {
       const isOpen = drawer.classList.toggle('open');
@@ -663,29 +694,8 @@
   }
   window.closeQueueDrawer = closeQueueDrawer;
 
-  function toggleLyricsDrawer() {
-    const drawer = document.getElementById('lyricsDrawer');
-    const backdrop = document.getElementById('drawerBackdrop');
-    closeQueueDrawer();
-
-    if (drawer) {
-      const isOpen = drawer.classList.toggle('open');
-      if (backdrop) backdrop.classList.toggle('open', isOpen);
-    }
-  }
-  window.toggleLyricsDrawer = toggleLyricsDrawer;
-
-  function closeLyricsDrawer() {
-    const drawer = document.getElementById('lyricsDrawer');
-    if (drawer) drawer.classList.remove('open');
-    const backdrop = document.getElementById('drawerBackdrop');
-    if (backdrop) backdrop.classList.remove('open');
-  }
-  window.closeLyricsDrawer = closeLyricsDrawer;
-
   function closeAllDrawers() {
     closeQueueDrawer();
-    closeLyricsDrawer();
   }
   window.closeAllDrawers = closeAllDrawers;
 
@@ -943,13 +953,6 @@
     // Restore user view preference
     const savedView = localStorage.getItem('tam_music_view');
     if (savedView === 'list') switchViewMode('list');
-
-    // Auto-setup marquees
-    setTimeout(refreshAllMarquees, 300);
-  });
-
-  window.addEventListener('resize', () => {
-    refreshAllMarquees();
   });
 
 })();

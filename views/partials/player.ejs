@@ -100,17 +100,8 @@
       </div>
     </div>
 
-    <!-- [3] Utilities (Volume, Queue, Lyrics, Fullscreen) -->
+    <!-- [3] Utilities (Volume, Queue, Fullscreen) -->
     <div class="player-utilities-group">
-      <!-- Lyrics toggle button -->
-      <button type="button" class="util-btn" id="lyricsToggleBtn" onclick="toggleLyricsDrawer()" title="Lời bài hát" aria-label="Lời bài hát">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-          <line x1="12" y1="19" x2="12" y2="22"></line>
-        </svg>
-      </button>
-
       <!-- Queue toggle button -->
       <button type="button" class="util-btn" id="queueToggleBtn" onclick="toggleQueueDrawer()" title="Danh sách chờ phát" aria-label="Danh sách chờ phát">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -309,14 +300,6 @@
 
     <!-- Bottom Secondary Actions -->
     <div class="now-playing-bottom-row">
-      <button type="button" class="modal-secondary-action-btn" onclick="toggleLyricsDrawer()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-        </svg>
-        <span>Lời bài hát</span>
-      </button>
-
       <button type="button" class="modal-secondary-action-btn" onclick="toggleQueueDrawer()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -366,29 +349,6 @@
     <div class="queue-section-label">Tiếp theo trong danh sách</div>
     <div class="queue-list" id="queueListContainer">
       <!-- Generated dynamically by player.js -->
-    </div>
-  </div>
-</aside>
-
-<!-- ══ CONTEXTUAL SLIDE-OUT LYRICS DRAWER ════════════════════════════ -->
-<aside class="app-drawer lyrics-drawer" id="lyricsDrawer" aria-label="Lời bài hát">
-  <div class="drawer-header">
-    <div class="drawer-title-group">
-      <h3 class="drawer-title">Lời bài hát & Thông tin</h3>
-      <span class="drawer-subtitle" id="lyricsTrackInfo">—</span>
-    </div>
-    <button type="button" class="drawer-close-btn" onclick="closeLyricsDrawer()" aria-label="Đóng bảng lời bài hát">✕</button>
-  </div>
-  <div class="drawer-body">
-    <div class="lyrics-card">
-      <div class="lyrics-visualizer" aria-hidden="true">
-        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-      </div>
-      <div class="lyrics-text" id="lyricsContent">
-        <p class="lyrics-hint">🎵 Thưởng thức giai điệu tuyệt vời từ Tâm Music</p>
-        <p class="lyrics-credit" id="lyricsArtistCredit"></p>
-        <p class="lyrics-album-credit" id="lyricsAlbumCredit"></p>
-      </div>
     </div>
   </div>
 </aside>

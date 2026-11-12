@@ -155,16 +155,18 @@
       hotLabel: s.hot_label || 'HOT'
     }))) %>;
 
-    function playAll() {
-      if (window.SONGS && window.SONGS.length > 0) playSong(0);
-    }
+    window.playAll = function() {
+      if (typeof playSong === 'function' && window.SONGS && window.SONGS.length > 0) {
+        playSong(0);
+      }
+    };
 
-    function shufflePlay() {
-      if (window.SONGS && window.SONGS.length > 0) {
+    window.shufflePlay = function() {
+      if (typeof playSong === 'function' && window.SONGS && window.SONGS.length > 0) {
         var randIdx = Math.floor(Math.random() * window.SONGS.length);
         playSong(randIdx);
       }
-    }
+    };
   </script>
   <script src="/js/player.js?v=4.0"></script>
   <script src="/js/playlist.js?v=4.0"></script>
