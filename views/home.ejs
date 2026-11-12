@@ -89,9 +89,6 @@
                       <div class="art-placeholder-icon">🎵</div>
                     <% } %>
                     <span class="hot-pill"><%= song.hot_label || 'HOT' %></span>
-                    <button type="button" class="shelf-card-play-btn" aria-label="Phát <%= song.title %>">
-                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                    </button>
                     <div class="card-equalizer" aria-hidden="true">
                       <span></span><span></span><span></span><span></span>
                     </div>
@@ -126,9 +123,6 @@
                     <% } else { %>
                       <div class="album-placeholder-box">💿</div>
                     <% } %>
-                    <div class="album-hover-play">
-                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                    </div>
                   </div>
                   <div class="album-shelf-info">
                     <span class="album-shelf-title"><%= album.name %></span>
@@ -224,12 +218,6 @@
                   <% if (Number(song.is_hot)) { %>
                     <span class="song-hot-badge"><%= song.hot_label || 'HOT' %></span>
                   <% } %>
-
-                  <div class="song-card-play-trigger" aria-label="Phát bài hát">
-                    <svg class="play-action-icon" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </div>
 
                   <!-- Equalizer animation when playing -->
                   <div class="song-playing-anim" aria-hidden="true">

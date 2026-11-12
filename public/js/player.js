@@ -54,7 +54,7 @@
   // ── PLAYBACK STATE ──────────────────────────────────────────────
   let currentIdx = -1;
   let isPlaying = false;
-  let repeatMode = 0; // 0 = off, 1 = all, 2 = one
+  let repeatMode = 0; // 0 = off, 1 = repeat one (bỏ lặp lại toàn bộ)
   let isShuffled = false;
   let previousVolume = 1;
   let isMuted = false;
@@ -406,24 +406,28 @@
   window.toggleMute = toggleMute;
 
   function toggleRepeat() {
-    repeatMode = (repeatMode + 1) % 3; // 0: off, 1: all, 2: one
+    repeatMode = repeatMode === 0 ? 1 : 0; // 0: off, 1: repeat current song
 
     const desktopBtn = document.getElementById('repeatBtn');
     const modalBtn = document.getElementById('modalRepeatBtn');
     const badge = document.getElementById('repeatOneBadge');
+    const modalBadge = document.getElementById('modalRepeatOneBadge');
 
     [desktopBtn, modalBtn].forEach(btn => {
       if (!btn) return;
-      btn.classList.toggle('active', repeatMode > 0);
-      btn.classList.toggle('repeat-one', repeatMode === 2);
+      btn.classList.toggle('active', repeatMode === 1);
+      btn.classList.toggle('repeat-one', repeatMode === 1);
+      btn.setAttribute('aria-pressed', String(repeatMode === 1));
     });
 
     if (badge) {
-      badge.style.display = repeatMode === 2 ? 'inline-flex' : 'none';
+      badge.style.display = repeatMode === 1 ? 'inline-flex' : 'none';
+    }
+    if (modalBadge) {
+      modalBadge.style.display = repeatMode === 1 ? 'inline-flex' : 'none';
     }
 
-    const labels = ['Tắt lặp lại', 'Lặp lại toàn bộ danh sách', 'Lặp lại bài hát hiện tại'];
-    showToast(`🔁 ${labels[repeatMode]}`);
+    showToast(repeatMode === 1 ? '🔁 Lặp lại bài hát hiện tại' : '➡️ Tắt lặp lại');
   }
   window.toggleRepeat = toggleRepeat;
 
@@ -636,15 +640,12 @@
   });
 
   audio.addEventListener('ended', () => {
-    if (repeatMode === 2) {
-      // Repeat one
+    if (repeatMode === 1) {
+      // Lặp lại bài hát hiện tại
       audio.currentTime = 0;
       audio.play().catch(e => console.warn(e));
-    } else if (repeatMode === 1) {
-      // Repeat all
-      nextSong();
     } else {
-      // Off: play next unless reached end
+      // Off: phát tiếp nếu chưa đến cuối danh sách (không lặp lại toàn bộ)
       const songList = window.SONGS || [];
       if (currentIdx < songList.length - 1) {
         nextSong();
