@@ -50,6 +50,13 @@
   const nowPlayingArtCard = document.getElementById('nowPlayingArtCard');
   const nowPlayingBackdrop = document.getElementById('nowPlayingBackdrop');
   const modalLikeBtn = document.getElementById('modalLikeBtn');
+  const modalPlayPauseBtn = document.getElementById('modalPlayPauseBtn');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let requestedArtwork;
+  let artworkRequest;
+  let artworkLayers = [];
+  let artworkAnimations = [];
+  let nowPlayingTrigger;
 
   // ── PLAYBACK STATE ──────────────────────────────────────────────
   let currentIdx = -1;
@@ -430,6 +437,9 @@
     if (playIcon) playIcon.innerHTML = icon;
     if (miniPlayIcon) miniPlayIcon.innerHTML = icon;
     if (modalPlayIcon) modalPlayIcon.innerHTML = icon;
+    if (modalPlayPauseBtn) {
+      modalPlayPauseBtn.setAttribute('aria-label', isPlaying ? 'Tạm dừng' : 'Phát nhạc');
+    }
 
     // List and Grid Card icons
     document.querySelectorAll('.song-interactive-card, .track-list-row').forEach(card => {
@@ -491,15 +501,126 @@
     if (playerCoverWrap) playerCoverWrap.innerHTML = markup;
     if (miniPlayerCover) miniPlayerCover.innerHTML = markup;
 
-    if (nowPlayingArtCard) {
-      nowPlayingArtCard.innerHTML = imgSrc
-        ? `<img class="now-playing-large-art" src="${imgSrc}" alt="Bìa bài hát">`
-        : `<div class="now-playing-art-placeholder">🎵</div>`;
+    if (nowPlayingModal?.classList.contains('open')) updateNowPlayingArtwork(imgSrc);
+  }
+
+  function finishArtworkTransition() {
+    artworkAnimations.forEach(animation => animation.cancel());
+    artworkAnimations = [];
+    [nowPlayingArtCard, nowPlayingBackdrop].forEach(container => {
+      container.querySelectorAll('img').forEach(image => {
+        if (!artworkLayers.includes(image)) image.remove();
+      });
+    });
+  }
+
+  function renderNowPlayingArtwork(cover) {
+    finishArtworkTransition();
+    const previousLayers = artworkLayers;
+    artworkLayers = [];
+    nowPlayingModal.style.removeProperty('--np-accent');
+    nowPlayingModal.style.removeProperty('--np-haze');
+
+    if (cover) {
+      cover.className = 'now-playing-large-art';
+      cover.alt = 'Bìa bài hát';
+      const background = cover.cloneNode();
+      background.className = '';
+      background.alt = '';
+      nowPlayingArtCard.append(cover);
+      nowPlayingBackdrop.append(background);
+      artworkLayers = [cover, background];
+      updateArtworkAccent(cover);
     }
 
-    if (nowPlayingBackdrop && imgSrc) {
-      nowPlayingBackdrop.style.backgroundImage = `url('${imgSrc}')`;
+    if (reducedMotion.matches) {
+      previousLayers.forEach(layer => layer.remove());
+      return;
     }
+
+    const options = { duration: 280, easing: 'ease-out' };
+    artworkAnimations = previousLayers.map((layer, index) => {
+      const animation = layer.animate(
+        [{ opacity: index === 0 ? 1 : 0.78 }, { opacity: 0 }],
+        { ...options, fill: 'forwards' }
+      );
+      animation.onfinish = () => {
+        layer.remove();
+        animation.cancel();
+      };
+      return animation;
+    });
+    artworkLayers.forEach((layer, index) => {
+      const frames = index === 0
+        ? [{ opacity: 0, transform: 'scale(1.035)' }, { opacity: 1, transform: 'scale(1)' }]
+        : [{ opacity: 0 }, { opacity: 0.78 }];
+      artworkAnimations.push(layer.animate(frames, options));
+    });
+  }
+
+  function updateArtworkAccent(image) {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 12;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) return;
+
+    try {
+      context.drawImage(image, 0, 0, 12, 12);
+      const pixels = context.getImageData(0, 0, 12, 12).data;
+      let red = 0, green = 0, blue = 0, total = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        const spread = Math.max(pixels[i], pixels[i + 1], pixels[i + 2])
+          - Math.min(pixels[i], pixels[i + 1], pixels[i + 2]);
+        const weight = spread * pixels[i + 3];
+        red += pixels[i] * weight;
+        green += pixels[i + 1] * weight;
+        blue += pixels[i + 2] * weight;
+        total += weight;
+      }
+      if (!total) return;
+      const color = [red, green, blue].map(channel => Math.round(channel / total)).join(' ');
+      nowPlayingModal.style.setProperty('--np-accent', `color-mix(in srgb, rgb(${color}) 32%, #fff4e6)`);
+      nowPlayingModal.style.setProperty('--np-haze', `color-mix(in srgb, rgb(${color}) 66%, #847762)`);
+    } catch {
+      // Artwork without CORS permission still supplies the backdrop.
+    }
+  }
+
+  function updateNowPlayingArtwork(src) {
+    const url = src || '';
+    if (url === requestedArtwork) return;
+    requestedArtwork = url;
+    if (artworkRequest) artworkRequest.abort();
+    artworkRequest = null;
+    if (!url) {
+      renderNowPlayingArtwork(null);
+      return;
+    }
+
+    const request = new AbortController();
+    artworkRequest = request;
+    const load = useCors => {
+      const cover = new Image();
+      cover.decoding = 'async';
+      if (useCors) cover.crossOrigin = 'anonymous';
+      cover.addEventListener('load', () => {
+        artworkRequest = null;
+        renderNowPlayingArtwork(cover);
+      }, { once: true, signal: request.signal });
+      cover.addEventListener('error', () => {
+        if (useCors) {
+          load(false);
+        } else {
+          artworkRequest = null;
+          renderNowPlayingArtwork(null);
+        }
+      }, { once: true, signal: request.signal });
+      cover.src = url;
+    };
+    const isRemote = /^https?:\/\/|^\/\//i.test(url)
+      && URL.canParse(url, location.href)
+      && new URL(url, location.href).origin !== location.origin;
+    load(isRemote);
   }
 
   function updateProgressUI(currentTime, duration) {
@@ -640,16 +761,34 @@
 
   // ── MODAL & DRAWERS CONTROLS ───────────────────────────────────
   function openNowPlayingModal() {
-    if (nowPlayingModal) nowPlayingModal.classList.add('open');
+    if (!nowPlayingModal || nowPlayingModal.classList.contains('open')) return;
+    nowPlayingTrigger = document.activeElement;
+    nowPlayingModal.classList.add('open');
     document.body.classList.add('modal-open');
+    updateNowPlayingArtwork(currentTrackData?.image);
+    nowPlayingModal.querySelector('.now-playing-dismiss-btn').focus({ preventScroll: true });
   }
   window.openNowPlayingModal = openNowPlayingModal;
 
   function closeNowPlayingModal() {
-    if (nowPlayingModal) nowPlayingModal.classList.remove('open');
+    if (!nowPlayingModal?.classList.contains('open')) return;
+    nowPlayingModal.classList.remove('open');
     document.body.classList.remove('modal-open');
+    if (artworkRequest) {
+      artworkRequest.abort();
+      artworkRequest = null;
+      requestedArtwork = undefined;
+    }
+    finishArtworkTransition();
+    window.closePlaylistPopup?.();
+    nowPlayingTrigger?.focus({ preventScroll: true });
+    nowPlayingTrigger = null;
   }
   window.closeNowPlayingModal = closeNowPlayingModal;
+
+  window.openNowPlayingPlaylist = function (trigger) {
+    window.openAddToPlaylistFromPlayer?.(trigger, currentTrackData);
+  };
 
   function toggleQueueDrawer() {
     const drawer = document.getElementById('queueDrawer');
@@ -714,9 +853,22 @@
 
   // ── KEYBOARD SHORTCUTS ─────────────────────────────────────────
   document.addEventListener('keydown', e => {
+    if (e.code === 'Escape' && nowPlayingModal?.classList.contains('open')) {
+      const popup = document.querySelector('.now-playing-playlist.open');
+      if (popup) {
+        window.closePlaylistPopup?.();
+        nowPlayingModal.querySelector('.add-btn').focus();
+      } else if (document.getElementById('queueDrawer')?.classList.contains('open')) {
+        closeQueueDrawer();
+      } else {
+        closeNowPlayingModal();
+      }
+      return;
+    }
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
 
     if (e.code === 'Space') {
+      if (e.target.closest('#nowPlayingModal button')) return;
       e.preventDefault();
       togglePlay();
     } else if (e.code === 'ArrowRight') {

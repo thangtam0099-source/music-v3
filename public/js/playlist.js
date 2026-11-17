@@ -88,6 +88,10 @@
   window.closePlaylistPopup = closePlaylistPopup;
 
   function positionPopover(popup, triggerBtn) {
+    const fromNowPlaying = !!triggerBtn.closest('#nowPlayingModal');
+    popup.classList.toggle('now-playing-playlist', fromNowPlaying);
+    if (fromNowPlaying) return;
+
     if (window.innerWidth <= 768) {
       // Mobile: bottom sheet style
       popup.style.top = '';
@@ -215,9 +219,9 @@
   window.quickCreatePlaylist = quickCreatePlaylist;
 
   // Quick open from player bar button
-  window.openAddToPlaylistFromPlayer = function () {
+  window.openAddToPlaylistFromPlayer = function (trigger, playingSong) {
     const list = window.SONGS || [];
-    const currentSong = list[window.currentIdx] || list[0];
+    const currentSong = playingSong || list[window.currentIdx] || list[0];
     if (!currentSong) {
       if (typeof window.showToast === 'function') {
         window.showToast('Chưa có bài hát nào được chọn.');
@@ -225,7 +229,7 @@
       return;
     }
 
-    const btn = document.getElementById('playerAddPlBtn') || document.body;
+    const btn = trigger || document.getElementById('playerAddPlBtn') || document.body;
     togglePlaylistPopup(btn, currentSong.id, currentSong.title);
   };
 
