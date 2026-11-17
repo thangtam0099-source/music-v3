@@ -16,6 +16,7 @@
   const playerBar = document.getElementById('playerBar');
   const mobileMiniPlayer = document.getElementById('mobileMiniPlayer');
   const nowPlayingModal = document.getElementById('nowPlayingModal');
+  const queueCurrentTrack = document.getElementById('queueCurrentTrack');
 
   // Desktop Controls
   const playPauseBtn = document.getElementById('playPauseBtn');
@@ -433,6 +434,7 @@
   // ── UI SYNCHRONIZATION HELPERS ──────────────────────────────────
   function updatePlayIcons() {
     const icon = isPlaying ? SVG_PAUSE : SVG_PLAY;
+    queueCurrentTrack?.classList.toggle('is-playing', isPlaying && !!currentTrackData);
 
     if (playIcon) playIcon.innerHTML = icon;
     if (miniPlayIcon) miniPlayIcon.innerHTML = icon;
@@ -824,9 +826,13 @@
 
     if (countEl) countEl.textContent = `${list.length} bài hát`;
 
-    if (currentTrackData) {
-      if (currTitle) currTitle.textContent = currentTrackData.title;
-      if (currArtist) currArtist.textContent = currentTrackData.artist;
+    if (currTitle) {
+      currTitle.textContent = currentTrackData ? currentTrackData.title || '—' : 'Chưa có bài hát đang phát';
+      currTitle.title = currentTrackData?.title || '';
+    }
+    if (currArtist) {
+      currArtist.textContent = currentTrackData?.artist || '';
+      currArtist.title = currArtist.textContent;
     }
 
     if (!container) return;

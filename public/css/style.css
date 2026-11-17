@@ -1228,6 +1228,8 @@ h1, h2, h3, h4, h5 {
   height: 16px;
   background: var(--accent);
   border-radius: var(--radius-pill);
+}
+.card-equalizer span, .row-equalizer-anim span {
   animation: equalizeBar 0.8s ease-in-out infinite alternate;
 }
 .card-equalizer span:nth-child(2) { animation-delay: 0.2s; }
@@ -3289,7 +3291,7 @@ h1, h2, h3, h4, h5 {
 .queue-current-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   padding: 12px 14px;
   background: var(--accent-light);
   border: 1px solid var(--accent);
@@ -3300,7 +3302,41 @@ h1, h2, h3, h4, h5 {
 .queue-card-meta {
   display: flex;
   flex-direction: column;
+  flex: 1;
   min-width: 0;
+}
+
+.queue-card-meta > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queue-playing-waves {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: 18px;
+  visibility: hidden;
+}
+
+.queue-playing-waves span {
+  height: 4px;
+}
+
+.queue-drawer.open .queue-current-card.is-playing .queue-playing-waves {
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .queue-drawer.open .queue-current-card.is-playing .queue-playing-waves span {
+    animation: equalizeBar 0.8s ease-in-out infinite alternate;
+  }
+
+  .queue-playing-waves span:nth-child(2) { animation-delay: -0.4s; }
+  .queue-playing-waves span:nth-child(3) { animation-delay: -0.7s; }
+  .queue-playing-waves span:nth-child(4) { animation-delay: -0.2s; }
 }
 
 .queue-title {
