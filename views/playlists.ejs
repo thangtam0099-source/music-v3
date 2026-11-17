@@ -14,35 +14,27 @@
 
       <main class="main-content" id="mainContent" role="main">
 
-        <div class="page-title-banner">
+        <div class="page-title-banner playlists-title-banner">
           <div class="page-title-group">
-            <span class="page-tag-label">Thư viện cá nhân</span>
             <h1 class="page-main-heading">Playlist của tôi</h1>
-            <p class="page-subheading">Tập hợp các danh sách phát yêu thích do chính bạn tạo ra và quản lý.</p>
           </div>
           <button type="button" class="btn btn-green" onclick="openModal('createModal')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
             <span>Tạo playlist mới</span>
           </button>
         </div>
 
         <% if (message) { %>
           <div class="app-alert app-alert-success" id="flashMsg">
-            <span class="alert-icon">✓</span>
             <span class="alert-text"><%= message %></span>
           </div>
         <% } %>
 
         <% if (playlists.length === 0) { %>
           <div class="empty-catalog-state">
-            <div class="empty-illustration">📋</div>
             <h3 class="empty-state-title">Bạn chưa có playlist nào</h3>
             <p class="empty-state-desc">Hãy tạo playlist đầu tiên để lưu lại những bài hát bạn yêu thích nhất!</p>
             <button type="button" class="btn btn-green" onclick="openModal('createModal')" style="margin-top: 14px;">
-              ＋ Tạo playlist ngay
+              Tạo playlist ngay
             </button>
           </div>
         <% } else { %>
@@ -50,14 +42,9 @@
             <% playlists.forEach(function(pl) { %>
               <div class="playlist-grid-card">
                 <a href="/playlists/<%= pl.id %>" class="playlist-card-link" aria-label="Xem <%= pl.name %>">
-                  <div class="playlist-card-cover-wrap">
+                  <div class="playlist-card-cover-wrap<%= pl.coverImg ? '' : ' playlist-cover-empty' %>">
                     <% if (pl.coverImg) { %>
                       <img class="playlist-card-cover" src="<%= pl.coverImg %>" alt="<%= pl.name %>" loading="lazy">
-                    <% } else { %>
-                      <div class="playlist-card-placeholder">
-                        <% const icons = ['🎵','🎶','🎸','🎹','🎺','🥁']; %>
-                        <%= icons[pl.id % icons.length] %>
-                      </div>
                     <% } %>
                   </div>
                   <div class="playlist-card-info">
@@ -67,17 +54,11 @@
                 </a>
 
                 <div class="playlist-card-manage-actions">
-                  <button type="button" class="pl-mini-btn" onclick="openRenameModal(<%= pl.id %>, '<%= pl.name.replace(/'/g, "\\'") %>')" title="Đổi tên playlist" aria-label="Đổi tên">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
-                    </svg>
+                  <button type="button" class="pl-mini-btn" data-name="<%= pl.name %>" onclick="openRenameModal(<%= pl.id %>, this.dataset.name)" title="Đổi tên playlist" aria-label="Đổi tên">
+                    Đổi tên
                   </button>
-                  <button type="button" class="pl-mini-btn danger" onclick="openDeleteModal(<%= pl.id %>, '<%= pl.name.replace(/'/g, "\\'") %>')" title="Xóa playlist" aria-label="Xóa">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M3 6h18"></path>
-                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                    </svg>
+                  <button type="button" class="pl-mini-btn danger" data-name="<%= pl.name %>" onclick="openDeleteModal(<%= pl.id %>, this.dataset.name)" title="Xóa playlist" aria-label="Xóa">
+                    Xóa
                   </button>
                 </div>
               </div>
@@ -86,88 +67,88 @@
         <% } %>
 
         <%- include('partials/footer', { settings }) %>
+
+        <!-- ══ MODALS CHO PLAYLIST ═══════════════════════════════════ -->
+        <!-- Tạo playlist mới -->
+        <div class="app-modal-overlay" id="createModal" role="dialog" aria-modal="true" aria-labelledby="createModalTitle">
+          <div class="app-modal-box">
+            <div class="modal-header">
+              <h3 class="modal-title" id="createModalTitle">Tạo playlist mới</h3>
+              <button type="button" class="modal-close-btn" onclick="closeModal('createModal')" aria-label="Đóng">✕</button>
+            </div>
+            <form action="/playlists/create" method="POST">
+              <div class="modal-body">
+                <div class="form-group-field">
+                  <label for="createInput">Tên danh sách phát</label>
+                  <input type="text" name="name" id="createInput" placeholder="VD: Nhạc thư giãn, Acoustic chill..." maxlength="80" required autofocus>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('createModal')">Hủy</button>
+                <button type="submit" class="btn btn-green">Tạo danh sách</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Đổi tên playlist -->
+        <div class="app-modal-overlay" id="renameModal" role="dialog" aria-modal="true" aria-labelledby="renameModalTitle">
+          <div class="app-modal-box">
+            <div class="modal-header">
+              <h3 class="modal-title" id="renameModalTitle">Đổi tên playlist</h3>
+              <button type="button" class="modal-close-btn" onclick="closeModal('renameModal')" aria-label="Đóng">✕</button>
+            </div>
+            <form id="renameForm" method="POST">
+              <div class="modal-body">
+                <div class="form-group-field">
+                  <label for="renameInput">Tên mới</label>
+                  <input type="text" name="name" id="renameInput" maxlength="80" required>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('renameModal')">Hủy</button>
+                <button type="submit" class="btn btn-green">Lưu thay đổi</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Xác nhận xóa playlist -->
+        <div class="app-modal-overlay" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+          <div class="app-modal-box">
+            <div class="modal-header">
+              <h3 class="modal-title" id="deleteModalTitle">Xác nhận xóa playlist</h3>
+              <button type="button" class="modal-close-btn" onclick="closeModal('deleteModal')" aria-label="Đóng">✕</button>
+            </div>
+            <form id="deleteForm" method="POST">
+              <div class="modal-body">
+                <p class="modal-warning-text">
+                  Bạn có chắc chắn muốn xóa playlist <strong id="deletePlName"></strong>? Hành động này không thể hoàn tác.
+                </p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('deleteModal')">Hủy bỏ</button>
+                <button type="submit" class="btn btn-danger">Xóa vĩnh viễn</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </main>
-    </div>
-  </div>
-
-  <!-- ══ MODALS CHO PLAYLIST ═══════════════════════════════════ -->
-  <!-- Tạo playlist mới -->
-  <div class="app-modal-overlay" id="createModal" role="dialog" aria-modal="true" aria-labelledby="createModalTitle">
-    <div class="app-modal-box">
-      <div class="modal-header">
-        <h3 class="modal-title" id="createModalTitle">✨ Tạo playlist mới</h3>
-        <button type="button" class="modal-close-btn" onclick="closeModal('createModal')" aria-label="Đóng">✕</button>
-      </div>
-      <form action="/playlists/create" method="POST">
-        <div class="modal-body">
-          <div class="form-group-field">
-            <label for="createInput">Tên danh sách phát</label>
-            <input type="text" name="name" id="createInput" placeholder="VD: Nhạc thư giãn, Acoustic chill..." maxlength="80" required autofocus>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-ghost" onclick="closeModal('createModal')">Hủy</button>
-          <button type="submit" class="btn btn-green">Tạo danh sách</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Đổi tên playlist -->
-  <div class="app-modal-overlay" id="renameModal" role="dialog" aria-modal="true" aria-labelledby="renameModalTitle">
-    <div class="app-modal-box">
-      <div class="modal-header">
-        <h3 class="modal-title" id="renameModalTitle">✏️ Đổi tên playlist</h3>
-        <button type="button" class="modal-close-btn" onclick="closeModal('renameModal')" aria-label="Đóng">✕</button>
-      </div>
-      <form id="renameForm" method="POST">
-        <div class="modal-body">
-          <div class="form-group-field">
-            <label for="renameInput">Tên mới</label>
-            <input type="text" name="name" id="renameInput" maxlength="80" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-ghost" onclick="closeModal('renameModal')">Hủy</button>
-          <button type="submit" class="btn btn-green">Lưu thay đổi</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Xác nhận xóa playlist -->
-  <div class="app-modal-overlay" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
-    <div class="app-modal-box">
-      <div class="modal-header">
-        <h3 class="modal-title" id="deleteModalTitle">🗑️ Xác nhận xóa playlist</h3>
-        <button type="button" class="modal-close-btn" onclick="closeModal('deleteModal')" aria-label="Đóng">✕</button>
-      </div>
-      <form id="deleteForm" method="POST">
-        <div class="modal-body">
-          <p class="modal-warning-text">
-            Bạn có chắc chắn muốn xóa playlist <strong id="deletePlName"></strong>? Hành động này không thể hoàn tác.
-          </p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-ghost" onclick="closeModal('deleteModal')">Hủy bỏ</button>
-          <button type="submit" class="btn btn-danger">Xóa vĩnh viễn</button>
-        </div>
-      </form>
     </div>
   </div>
 
   <%- include('partials/player') %>
   <%- include('partials/mobile_nav', { user, activeNav: 'playlists' }) %>
 
-  <script>
-    if (!window.SONGS) window.SONGS = [];
+  <script data-playlist-page>
+    window.SONGS = [];
 
     function openModal(id) {
       var modal = document.getElementById(id);
       if (modal) {
         modal.classList.add('open');
         var input = modal.querySelector('input[type="text"]');
-        if (input) setTimeout(function() { input.focus(); }, 100);
+        (input || modal.querySelector('.modal-close-btn')).focus();
       }
     }
 
@@ -192,14 +173,12 @@
       overlay.addEventListener('click', function(e) {
         if (e.target === overlay) overlay.classList.remove('open');
       });
-    });
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        document.querySelectorAll('.app-modal-overlay.open').forEach(function(modal) {
-          modal.classList.remove('open');
-        });
-      }
+      overlay.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          overlay.classList.remove('open');
+        }
+      });
     });
 
     setTimeout(function() {
@@ -211,7 +190,7 @@
       }
     }, 3200);
   </script>
-  <script src="/js/player.js?v=4.0"></script>
+  <script src="/js/player.js?v=4.7"></script>
   <script src="/js/playlist.js?v=4.0"></script>
   <script src="/js/search.js?v=4.0"></script>
 </body>

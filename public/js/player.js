@@ -5,7 +5,7 @@
    - Full-screen Now Playing modal with ambient artwork lighting
    - Queue drawer, Lyrics drawer, Marquee animations
    - MediaSession API, keyboard shortcuts, volume & seek controls
-   - Liked songs persistence & Theme management
+   - Liked songs persistence
 ═══════════════════════════════════════════════════════════════════════ */
 
 (function () {
@@ -67,6 +67,7 @@
   let previousVolume = 1;
   let isMuted = false;
   let currentTrackData = null;
+  let pageRequest;
 
   // Local likes set
   let likedSongIds = new Set();
@@ -80,62 +81,31 @@
   // Icons
   const SVG_PLAY = '<path d="M8 5v14l11-7z"/>';
   const SVG_PAUSE = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-
-  // ── THEME CONTROLLER ───────────────────────────────────────────
-  function initTheme() {
-    const savedTheme = localStorage.getItem('tam_music_theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const currentTheme = savedTheme || (prefersDark ? 'dark' : 'light');
-    applyTheme(currentTheme);
-
-    const toggleBtn = document.getElementById('themeToggleBtn');
-    const quickBtn = document.getElementById('quickThemeBtn');
-
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', toggleTheme);
-    }
-    if (quickBtn) {
-      quickBtn.addEventListener('click', toggleTheme);
-    }
-  }
-
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('tam_music_theme', theme);
-
-    const stateText = document.getElementById('themeStateText');
-    if (stateText) {
-      stateText.textContent = theme === 'light' ? 'Chế độ sáng' : 'Chế độ tối';
-    }
-
-    const metaTheme = document.getElementById('metaThemeColor');
-    if (metaTheme) {
-      metaTheme.setAttribute('content', theme === 'light' ? '#f8fafc' : '#0b0f17');
-    }
-  }
-
-  function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = current === 'dark' ? 'light' : 'dark';
-    applyTheme(next);
-  }
-
-  // ── TEXT DISPLAY HELPER ────────────────────────────────────────
-  function refreshAllMarquees() {
-    // Native CSS ellipsis handles responsive text overflow seamlessly
-  }
+  const SHUFFLE_ICON = '<path d="M3 7h3c4 0 5 10 10 10h5m-4-4 4 4-4 4M3 17h3c1.3 0 2.3-1 3.2-2.5m3.6-5C13.7 8 14.7 7 16 7h5m-4-4 4 4-4 4"/>';
+  const SEQUENTIAL_ICON = '<path d="M3 6h14M3 12h14M3 18h8m4-2 3 3 4-4"/>';
+  const REPEAT_ICON = '<path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3"/>';
 
   // ── TOAST NOTIFICATION SYSTEM ──────────────────────────────────
-  function showToast(message, isError = false) {
+  function showToast(message, isError = false, playbackIcon = '') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
 
     const toast = document.createElement('div');
     toast.className = `app-toast ${isError ? 'toast-error' : 'toast-success'}`;
-    toast.innerHTML = `
-      <span class="toast-icon">${isError ? '⚠️' : '✓'}</span>
-      <span class="toast-msg">${message}</span>
-    `;
+    const icon = document.createElement('span');
+    icon.className = 'toast-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = isError ? '⚠️' : '✓';
+    const text = document.createElement('span');
+    text.className = 'toast-msg';
+    text.textContent = message;
+
+    if (playbackIcon) {
+      container.querySelector('.playback-toast')?.remove();
+      toast.classList.add('playback-toast');
+      icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${playbackIcon}</svg>`;
+    }
+    toast.append(icon, text);
 
     container.appendChild(toast);
     requestAnimationFrame(() => toast.classList.add('show'));
@@ -153,6 +123,7 @@
       localStorage.setItem('tam_music_likes', JSON.stringify(Array.from(likedSongIds)));
     } catch (e) {}
     updateLikedBadge();
+    if (renderFavorites()) syncPagePlayback();
     syncLikeButtons();
   }
 
@@ -216,6 +187,58 @@
   }
   window.filterLikedSongs = filterLikedSongs;
 
+  function renderFavorites() {
+    const catalog = document.getElementById('favoriteCatalog');
+    if (!catalog) return false;
+
+    const songs = JSON.parse(catalog.textContent).filter(song => likedSongIds.has(Number(song.id)));
+    window.SONGS = songs;
+    document.getElementById('favTotalCount').textContent = songs.length;
+    document.getElementById('favActionButtons').style.display = songs.length ? 'flex' : 'none';
+    document.getElementById('favSongsTable').style.display = songs.length ? 'flex' : 'none';
+    document.getElementById('favEmptyState').style.display = songs.length ? 'none' : 'block';
+
+    const template = document.getElementById('favoriteRowTemplate');
+    const rows = songs.map((song, index) => {
+      const row = template.content.firstElementChild.cloneNode(true);
+      row.dataset.songId = song.id;
+      row.dataset.idx = index;
+      row.querySelector('.index-number').textContent = index + 1;
+      for (const [selector, text] of [
+        ['.row-title', song.title], ['.row-artist', song.artist], ['.row-album-text', song.album || '—']
+      ]) {
+        const label = row.querySelector(selector);
+        label.textContent = text;
+        label.title = text;
+      }
+      const image = row.querySelector('.row-thumb');
+      if (song.image) {
+        image.src = song.image;
+        image.hidden = false;
+        row.querySelector('.row-thumb-placeholder').remove();
+      } else {
+        image.remove();
+      }
+      row.addEventListener('click', () => playSong(index));
+      const actions = row.querySelector('.col-actions');
+      actions.addEventListener('click', event => event.stopPropagation());
+      const likeButton = row.querySelector('.like-btn');
+      likeButton.addEventListener('click', () => toggleCardLike(likeButton, song.id));
+      const playlistButton = row.querySelector('.playlist-btn');
+      playlistButton.addEventListener('click', () => window.togglePlaylistPopup(playlistButton, song.id, song.title));
+      return row;
+    });
+    document.getElementById('favRowsList').replaceChildren(...rows);
+    return true;
+  }
+
+  function syncPagePlayback() {
+    const songs = window.SONGS || [];
+    currentIdx = currentTrackData ? songs.findIndex(song => Number(song.id) === Number(currentTrackData.id)) : -1;
+    syncActiveCards(currentIdx);
+    if (document.getElementById('queueDrawer')?.classList.contains('open')) updateQueueDrawer();
+  }
+
   // ── CORE PLAYBACK LOGIC ────────────────────────────────────────
   function playSong(idx) {
     const songList = window.SONGS || [];
@@ -258,7 +281,7 @@
 
   function togglePlay() {
     const songList = window.SONGS || [];
-    if (currentIdx === -1 && songList.length > 0) {
+    if (!currentTrackData && songList.length > 0) {
       playSong(0);
       return;
     }
@@ -320,17 +343,7 @@
       showToast('Danh sách bài hát trống', true);
       return;
     }
-    if (isShuffled) {
-      isShuffled = false;
-      const shuffleBtn = document.getElementById('shuffleBtn');
-      const modalShuffleBtn = document.getElementById('modalShuffleBtn');
-      [shuffleBtn, modalShuffleBtn].forEach(btn => {
-        if (btn) {
-          btn.classList.remove('active');
-          btn.setAttribute('aria-pressed', 'false');
-        }
-      });
-    }
+    setShuffle(false);
     playSong(0);
   }
   window.playAll = playAll;
@@ -341,17 +354,7 @@
       showToast('Danh sách bài hát trống', true);
       return;
     }
-    if (!isShuffled) {
-      isShuffled = true;
-      const shuffleBtn = document.getElementById('shuffleBtn');
-      const modalShuffleBtn = document.getElementById('modalShuffleBtn');
-      [shuffleBtn, modalShuffleBtn].forEach(btn => {
-        if (btn) {
-          btn.classList.add('active');
-          btn.setAttribute('aria-pressed', 'true');
-        }
-      });
-    }
+    setShuffle(true);
     const randIdx = Math.floor(Math.random() * songList.length);
     playSong(randIdx);
   }
@@ -411,23 +414,21 @@
       modalBadge.style.display = repeatMode === 1 ? 'inline-flex' : 'none';
     }
 
-    showToast(repeatMode === 1 ? '🔁 Lặp lại bài hát hiện tại' : '➡️ Tắt lặp lại');
+    showToast(repeatMode === 1 ? 'Đã bật lặp lại bài hát' : 'Đã tắt lặp lại bài hát', false, REPEAT_ICON);
   }
   window.toggleRepeat = toggleRepeat;
 
-  function toggleShuffle() {
-    isShuffled = !isShuffled;
-    const shuffleBtn = document.getElementById('shuffleBtn');
-    const modalShuffleBtn = document.getElementById('modalShuffleBtn');
-
-    [shuffleBtn, modalShuffleBtn].forEach(btn => {
-      if (btn) {
-        btn.classList.toggle('active', isShuffled);
-        btn.setAttribute('aria-pressed', String(isShuffled));
-      }
+  function setShuffle(enabled) {
+    isShuffled = enabled;
+    document.querySelectorAll('#shuffleBtn, #modalShuffleBtn, #queueShuffleBtn').forEach(btn => {
+      btn.classList.toggle('active', enabled);
+      btn.setAttribute('aria-pressed', String(enabled));
     });
+  }
 
-    showToast(isShuffled ? '🔀 Đã bật phát ngẫu nhiên' : '➡️ Phát tuần tự');
+  function toggleShuffle() {
+    setShuffle(!isShuffled);
+    showToast(isShuffled ? 'Đã bật phát ngẫu nhiên' : 'Đang phát tuần tự', false, isShuffled ? SHUFFLE_ICON : SEQUENTIAL_ICON);
   }
   window.toggleShuffle = toggleShuffle;
 
@@ -894,6 +895,7 @@
   // ── UNINTERRUPTED AUDIO SPA / PJAX NAVIGATION ──────────────────
   function setupSpaNavigation() {
     document.addEventListener('click', e => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const link = e.target.closest('a');
       if (!link) return;
 
@@ -916,6 +918,8 @@
       }
 
       e.preventDefault();
+      document.getElementById('appSidebar')?.classList.remove('open');
+      document.getElementById('sidebarBackdrop')?.classList.remove('open');
       navigateToUrl(url.pathname + url.search);
     });
 
@@ -930,9 +934,13 @@
   }
 
   async function loadPageContent(urlPath, scrollToTop) {
+    pageRequest?.abort();
+    const request = new AbortController();
+    pageRequest = request;
     try {
       const resp = await fetch(urlPath, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        signal: request.signal
       });
       if (!resp.ok) {
         window.location.href = urlPath;
@@ -940,6 +948,7 @@
       }
 
       const html = await resp.text();
+      if (request.signal.aborted) return;
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
 
@@ -950,21 +959,25 @@
         currentMain.innerHTML = newMain.innerHTML;
         document.title = doc.title;
 
-        // Extract new SONGS array if provided
-        const scripts = doc.querySelectorAll('script');
-        scripts.forEach(s => {
-          if (s.textContent.includes('window.SONGS =')) {
-            try {
-              eval(s.textContent);
-            } catch (err) {}
+        if (!renderFavorites()) {
+          window.SONGS = [];
+          const playlistScript = doc.querySelector('script[data-playlist-page]');
+          if (playlistScript) {
+            const script = document.createElement('script');
+            script.textContent = playlistScript.textContent;
+            currentMain.append(script);
+          } else {
+            // Read the song list exported by the catalog and album pages.
+            doc.querySelectorAll('script:not([src])').forEach(script => {
+              if (script.textContent.includes('window.SONGS =')) eval(script.textContent);
+            });
           }
-        });
+        }
 
         // Update active navigation links
         updateNavPills(urlPath);
         syncLikeButtons();
-        syncActiveCards(currentIdx);
-        refreshAllMarquees();
+        syncPagePlayback();
 
         if (scrollToTop) {
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -973,7 +986,7 @@
         window.location.href = urlPath;
       }
     } catch (err) {
-      window.location.href = urlPath;
+      if (!request.signal.aborted) window.location.href = urlPath;
     }
   }
 
@@ -986,6 +999,7 @@
       if (navTarget === 'home' && pathname === '/') isActive = true;
       else if (navTarget === 'albums' && pathname.startsWith('/albums')) isActive = true;
       else if (navTarget === 'playlists' && pathname.startsWith('/playlists')) isActive = true;
+      else if (navTarget === 'favorites' && pathname === '/favorites') isActive = true;
 
       el.classList.toggle('active', isActive);
     });
@@ -1075,12 +1089,12 @@
 
   // ── ON INITIAL LOAD ────────────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
-    initTheme();
     initSidebar();
     initUserMenu();
     setupSpaNavigation();
     updateTimeGreeting();
     updateLikedBadge();
+    renderFavorites();
     syncLikeButtons();
 
     // Restore user view preference (default: 'list')

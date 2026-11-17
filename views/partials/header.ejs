@@ -1,7 +1,7 @@
 <header class="app-header" id="appHeader">
   <div class="header-left">
     <button type="button" class="sidebar-toggle-btn" id="sidebarOpenBtn" aria-label="Mở menu điều hướng">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="4" x2="20" y1="12" y2="12"></line>
         <line x1="4" x2="20" y1="6" y2="6"></line>
         <line x1="4" x2="20" y1="18" y2="18"></line>
@@ -76,24 +76,6 @@
   </div>
 
   <div class="header-right">
-    <!-- Quick Theme Toggle -->
-    <button type="button" class="quick-theme-btn" id="quickThemeBtn" title="Chuyển chế độ Sáng / Tối" aria-label="Chuyển chế độ Sáng / Tối">
-      <svg class="theme-sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="4"></circle>
-        <path d="M12 2v2"></path>
-        <path d="M12 20v2"></path>
-        <path d="m4.93 4.93 1.41 1.41"></path>
-        <path d="m17.66 17.66 1.41 1.41"></path>
-        <path d="M2 12h2"></path>
-        <path d="M20 12h2"></path>
-        <path d="m6.34 17.66-1.41 1.41"></path>
-        <path d="m19.07 4.93-1.41 1.41"></path>
-      </svg>
-      <svg class="theme-moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-      </svg>
-    </button>
-
     <% if (user) { %>
       <div class="header-user-menu">
         <button type="button" class="header-user-pill" id="headerUserBtn" aria-haspopup="true" aria-expanded="false">

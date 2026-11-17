@@ -40,13 +40,13 @@
             </div>
 
             <div class="detail-action-buttons" id="favActionButtons" style="display: none;">
-              <button type="button" class="btn btn-green btn-hero-action" onclick="playAllFavorites()">
+              <button type="button" class="btn btn-green btn-hero-action" onclick="playAll()">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
                 <span>Phát tất cả</span>
               </button>
-              <button type="button" class="btn btn-outline-white btn-hero-action" onclick="shuffleFavorites()">
+              <button type="button" class="btn btn-outline-white btn-hero-action" onclick="shufflePlay()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="16 3 21 3 21 8"></polyline>
                   <line x1="4" y1="20" x2="21" y2="3"></line>
@@ -80,6 +80,56 @@
             </div>
             <div id="favRowsList"></div>
           </div>
+          <script type="application/json" id="favoriteCatalog">
+            <%- JSON.stringify(songs.map(s => ({
+              id: s.id,
+              title: s.title,
+              artist: s.artist,
+              album: s.album || '',
+              image: s.image || '',
+              src: s.music_file
+            }))).replace(/</g, '\\u003c') %>
+          </script>
+          <template id="favoriteRowTemplate">
+            <div class="track-list-row pl-song-row">
+              <div class="col-index">
+                <span class="index-number"></span>
+                <span class="row-play-icon">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </span>
+                <div class="row-equalizer-anim" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+
+              <div class="col-main">
+                <img class="row-thumb" alt="" loading="lazy" hidden>
+                <div class="row-thumb-placeholder">🎵</div>
+                <div class="row-title-group">
+                  <span class="row-title"></span>
+                  <span class="row-artist"></span>
+                </div>
+              </div>
+
+              <div class="col-album">
+                <span class="row-album-text"></span>
+              </div>
+
+              <div class="col-actions">
+                <button type="button" class="row-action-btn like-btn active" title="Bỏ yêu thích" aria-label="Bỏ yêu thích">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+                  </svg>
+                </button>
+                <button type="button" class="row-action-btn playlist-btn" title="Thêm vào playlist" aria-label="Thêm vào playlist">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </template>
         </section>
 
         <%- include('partials/footer', { settings }) %>
@@ -90,136 +140,9 @@
   <%- include('partials/player') %>
   <%- include('partials/mobile_nav', { user, activeNav: 'favorites' }) %>
 
-  <!-- Catalog Data Injection -->
-  <script>
-    window.RAW_CATALOG = <%- JSON.stringify(songs.map(s => ({
-      id:       s.id,
-      title:    s.title,
-      artist:   s.artist,
-      album:    s.album || '',
-      image:    s.image || '',
-      src:      s.music_file,
-      isHot:    Number(s.is_hot) === 1,
-      hotLabel: s.hot_label || 'HOT'
-    }))) %>;
-  </script>
-  <script src="/js/player.js?v=4.1"></script>
+  <script src="/js/player.js?v=4.7"></script>
   <script src="/js/playlist.js?v=4.1"></script>
   <script src="/js/search.js?v=4.1"></script>
 
-  <script>
-    (function() {
-      function renderFavorites() {
-        const rawCatalog = window.RAW_CATALOG || [];
-        let likedIds = [];
-        try {
-          likedIds = JSON.parse(localStorage.getItem('tam_music_likes') || '[]');
-          if (!Array.isArray(likedIds)) likedIds = [];
-        } catch(e) {
-          likedIds = [];
-        }
-
-        const likedSet = new Set(likedIds.map(Number));
-        const filtered = rawCatalog.filter(s => likedSet.has(Number(s.id)));
-
-        // Update global SONGS for player playback
-        window.SONGS = filtered;
-
-        const countEl = document.getElementById('favTotalCount');
-        const actionsEl = document.getElementById('favActionButtons');
-        const emptyEl = document.getElementById('favEmptyState');
-        const tableEl = document.getElementById('favSongsTable');
-        const listEl = document.getElementById('favRowsList');
-
-        if (countEl) countEl.textContent = filtered.length;
-
-        if (!filtered.length) {
-          if (actionsEl) actionsEl.style.display = 'none';
-          if (tableEl) tableEl.style.display = 'none';
-          if (emptyEl) emptyEl.style.display = 'block';
-          if (listEl) listEl.innerHTML = '';
-          return;
-        }
-
-        if (actionsEl) actionsEl.style.display = 'flex';
-        if (tableEl) tableEl.style.display = 'flex';
-        if (emptyEl) emptyEl.style.display = 'none';
-
-        if (listEl) {
-          listEl.innerHTML = filtered.map((song, idx) => `
-            <div class="track-list-row pl-song-row" data-song-id="${song.id}" data-idx="${idx}" onclick="playSong(${idx})">
-              <div class="col-index">
-                <span class="index-number">${idx + 1}</span>
-                <span class="row-play-icon">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                </span>
-                <div class="row-equalizer-anim" aria-hidden="true">
-                  <span></span><span></span><span></span><span></span>
-                </div>
-              </div>
-
-              <div class="col-main">
-                ${song.image ? `<img class="row-thumb" src="${song.image}" alt="${song.title}" loading="lazy">` : `<div class="row-thumb-placeholder">🎵</div>`}
-                <div class="row-title-group">
-                  <span class="row-title" title="${song.title}">${song.title}</span>
-                  <span class="row-artist" title="${song.artist}">${song.artist}</span>
-                </div>
-              </div>
-
-              <div class="col-album">
-                <span class="row-album-text" title="${song.album || ''}">${song.album || '—'}</span>
-              </div>
-
-              <div class="col-actions" onclick="event.stopPropagation()">
-                <button type="button" class="row-action-btn like-btn active" onclick="removeFromFavoritesPage(${song.id})" title="Bỏ yêu thích" aria-label="Bỏ yêu thích">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
-                  </svg>
-                </button>
-                <button type="button" class="row-action-btn playlist-btn" onclick="togglePlaylistPopup(this, ${song.id}, '${song.title.replace(/'/g, "\\'")}')" title="Thêm vào playlist" aria-label="Thêm vào playlist">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          `).join('');
-        }
-      }
-
-      window.removeFromFavoritesPage = function(songId) {
-        if (typeof window.toggleCardLike === 'function') {
-          window.toggleCardLike(document.createElement('div'), songId);
-        }
-        renderFavorites();
-      };
-
-      window.playAllFavorites = function() {
-        if (!window.SONGS || !window.SONGS.length) {
-          if (typeof window.showToast === 'function') window.showToast('Danh sách bài hát yêu thích trống', true);
-          return;
-        }
-        if (typeof window.playAll === 'function') {
-          window.playAll();
-        }
-      };
-
-      window.shuffleFavorites = function() {
-        if (!window.SONGS || !window.SONGS.length) {
-          if (typeof window.showToast === 'function') window.showToast('Danh sách bài hát yêu thích trống', true);
-          return;
-        }
-        if (typeof window.shufflePlay === 'function') {
-          window.shufflePlay();
-        }
-      };
-
-      // Initial render on DOM load
-      document.addEventListener('DOMContentLoaded', renderFavorites);
-      // In case PJAX/SPA or script executed after DOMContentLoaded
-      renderFavorites();
-    })();
-  </script>
 </body>
 </html>
