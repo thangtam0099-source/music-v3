@@ -520,7 +520,6 @@
     finishArtworkTransition();
     const previousLayers = artworkLayers;
     artworkLayers = [];
-    nowPlayingModal.style.removeProperty('--np-accent');
     nowPlayingModal.style.removeProperty('--np-haze');
 
     if (cover) {
@@ -532,7 +531,7 @@
       nowPlayingArtCard.append(cover);
       nowPlayingBackdrop.append(background);
       artworkLayers = [cover, background];
-      updateArtworkAccent(cover);
+      updateArtworkHaze(cover);
     }
 
     if (reducedMotion.matches) {
@@ -560,7 +559,7 @@
     });
   }
 
-  function updateArtworkAccent(image) {
+  function updateArtworkHaze(image) {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 12;
     const context = canvas.getContext('2d', { willReadFrequently: true });
@@ -581,7 +580,6 @@
       }
       if (!total) return;
       const color = [red, green, blue].map(channel => Math.round(channel / total)).join(' ');
-      nowPlayingModal.style.setProperty('--np-accent', `color-mix(in srgb, rgb(${color}) 32%, #fff4e6)`);
       nowPlayingModal.style.setProperty('--np-haze', `color-mix(in srgb, rgb(${color}) 66%, #847762)`);
     } catch {
       // Artwork without CORS permission still supplies the backdrop.

@@ -1195,13 +1195,13 @@ h1, h2, h3, h4, h5 {
   position: absolute;
   top: 8px;
   left: 8px;
-  background: var(--accent-active);
+  background: #f43f5e;
   color: #ffffff;
   font-size: 0.65rem;
   font-weight: 800;
   padding: 2px 7px;
   border-radius: var(--radius-pill);
-  box-shadow: 0 2px 6px var(--accent-glow);
+  box-shadow: 0 2px 6px rgba(244, 63, 94, 0.4);
 }
 
 .shelf-card-play-btn {
@@ -1727,15 +1727,13 @@ h1, h2, h3, h4, h5 {
   align-items: center;
   justify-content: center;
   font-size: 2.8rem;
-  background: var(--accent-light);
-  color: var(--accent);
 }
 
 .song-hot-badge {
   position: absolute;
   top: 8px;
   left: 8px;
-  background: var(--accent-active);
+  background: #f43f5e;
   color: #ffffff;
   font-size: 0.65rem;
   font-weight: 800;
@@ -1802,7 +1800,7 @@ h1, h2, h3, h4, h5 {
 
 .song-card-album {
   font-size: 0.74rem;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1826,14 +1824,12 @@ h1, h2, h3, h4, h5 {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   transition: all var(--transition-fast);
 }
-.card-icon-action:hover,
-.card-icon-action:focus-visible,
-.card-like-btn.active {
-  background: var(--accent-light);
-  color: var(--accent);
+.card-icon-action:hover {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
 }
 .card-icon-action svg {
   width: 16px;
@@ -1841,8 +1837,8 @@ h1, h2, h3, h4, h5 {
 }
 
 .card-like-btn.active svg {
-  fill: currentColor;
-  stroke: currentColor;
+  fill: #f43f5e;
+  stroke: #f43f5e;
 }
 
 /* ── SONGS DISPLAY (LIST VIEW) ────────────────────────────────── */
@@ -2797,7 +2793,6 @@ h1, h2, h3, h4, h5 {
 
 /* Expanded Now Playing */
 .now-playing-modal {
-  --np-accent: #f3dfba;
   --np-haze: #847762;
   --np-blur: 38px;
   display: none;
@@ -2997,8 +2992,8 @@ h1, h2, h3, h4, h5 {
   height: 11px;
   border: 0;
   border-radius: 50%;
-  background: var(--np-accent);
-  box-shadow: 0 0 9px var(--np-accent);
+  background: var(--accent);
+  box-shadow: 0 0 9px var(--accent);
 }
 
 .now-playing-range::-moz-range-thumb {
@@ -3006,8 +3001,8 @@ h1, h2, h3, h4, h5 {
   height: 11px;
   border: 0;
   border-radius: 50%;
-  background: var(--np-accent);
-  box-shadow: 0 0 9px var(--np-accent);
+  background: var(--accent);
+  box-shadow: 0 0 9px var(--accent);
 }
 
 .now-playing-seek-track {
@@ -3016,7 +3011,7 @@ h1, h2, h3, h4, h5 {
   height: 4px;
   overflow: hidden;
   border-radius: 99px;
-  background: #ffffff40;
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
   pointer-events: none;
 }
 
@@ -3024,13 +3019,13 @@ h1, h2, h3, h4, h5 {
   width: 0;
   height: 100%;
   border-radius: inherit;
-  background: var(--np-accent);
+  background: var(--accent);
 }
 
 .now-playing-time-stamps {
   display: flex;
   justify-content: space-between;
-  color: #ded6da;
+  color: var(--accent);
   font-size: 0.735rem;
   line-height: 1;
   font-weight: 700;
@@ -3070,11 +3065,7 @@ h1, h2, h3, h4, h5 {
 
 .now-playing-modal .modal-ctrl-btn {
   position: relative;
-  color: #e6dfe3;
-}
-
-.now-playing-modal .modal-ctrl-btn.active {
-  color: var(--np-accent);
+  color: var(--accent);
 }
 
 .now-playing-modal .modal-ctrl-btn.active::after {
@@ -3088,16 +3079,16 @@ h1, h2, h3, h4, h5 {
 }
 
 .now-playing-modal .repeat-one-badge {
-  background: var(--np-accent);
+  background: var(--accent);
   color: #17151a;
 }
 
 .now-playing-modal .modal-play-btn {
   width: clamp(56px, 15vw, 76px);
   aspect-ratio: 1;
-  background: var(--np-accent);
+  background: var(--accent);
   color: #17151a;
-  box-shadow: 0 8px 24px #0005;
+  box-shadow: 0 8px 24px var(--accent-glow);
 }
 
 .now-playing-modal .modal-play-btn svg {
@@ -3123,8 +3114,8 @@ h1, h2, h3, h4, h5 {
   width: 100%;
   gap: 6px;
   padding: 4px 6px;
-  background: #ffffff12;
-  color: #eee7eb;
+  background: var(--accent-light);
+  color: var(--accent);
   font-size: clamp(0.69rem, 2.8vw, 0.82rem);
   font-weight: 700;
   line-height: 1.2;
@@ -3137,7 +3128,9 @@ h1, h2, h3, h4, h5 {
 
 @media (hover: hover) {
   .now-playing-modal button:hover { background-color: #ffffff22; }
-  .now-playing-modal .modal-play-btn:hover { background-color: #fff5e5; }
+  .now-playing-modal .modal-ctrl-btn:hover { background-color: var(--accent-light); }
+  .now-playing-modal .modal-play-btn:hover { background-color: var(--accent-hover); }
+  .now-playing-modal .modal-secondary-action-btn:hover { background-color: var(--accent-glow); }
 }
 
 .now-playing-modal button:active { transform: scale(0.93); }
