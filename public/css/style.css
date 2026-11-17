@@ -3011,7 +3011,7 @@ h1, h2, h3, h4, h5 {
   height: 4px;
   overflow: hidden;
   border-radius: 99px;
-  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  background: #ffffff29;
   pointer-events: none;
 }
 
@@ -3025,7 +3025,7 @@ h1, h2, h3, h4, h5 {
 .now-playing-time-stamps {
   display: flex;
   justify-content: space-between;
-  color: var(--accent);
+  color: #94a3b8;
   font-size: 0.735rem;
   line-height: 1;
   font-weight: 700;
@@ -3065,6 +3065,10 @@ h1, h2, h3, h4, h5 {
 
 .now-playing-modal .modal-ctrl-btn {
   position: relative;
+  color: #94a3b8;
+}
+
+.now-playing-modal .modal-ctrl-btn.active {
   color: var(--accent);
 }
 
@@ -3114,8 +3118,8 @@ h1, h2, h3, h4, h5 {
   width: 100%;
   gap: 6px;
   padding: 4px 6px;
-  background: var(--accent-light);
-  color: var(--accent);
+  background: #ffffff12;
+  color: #eee7eb;
   font-size: clamp(0.69rem, 2.8vw, 0.82rem);
   font-weight: 700;
   line-height: 1.2;
@@ -3128,9 +3132,7 @@ h1, h2, h3, h4, h5 {
 
 @media (hover: hover) {
   .now-playing-modal button:hover { background-color: #ffffff22; }
-  .now-playing-modal .modal-ctrl-btn:hover { background-color: var(--accent-light); }
   .now-playing-modal .modal-play-btn:hover { background-color: var(--accent-hover); }
-  .now-playing-modal .modal-secondary-action-btn:hover { background-color: var(--accent-glow); }
 }
 
 .now-playing-modal button:active { transform: scale(0.93); }
