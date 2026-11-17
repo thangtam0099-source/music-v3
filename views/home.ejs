@@ -144,7 +144,7 @@
                   <% if (song.image) { %>
                     <img class="song-card-thumb" src="<%= song.image %>" alt="<%= song.title %>" loading="lazy">
                   <% } else { %>
-                    <div class="song-card-placeholder">🎵</div>
+                    <div class="song-card-placeholder" aria-hidden="true">♫</div>
                   <% } %>
 
                   <% if (Number(song.is_hot)) { %>

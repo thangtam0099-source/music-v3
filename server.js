@@ -20,6 +20,14 @@ if (fs.existsSync(uploadsDir)) app.use('/uploads', express.static(uploadsDir));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+app.use((req, res, next) => {
+  const protocol = process.env.VERCEL === '1' ? 'https' : req.protocol;
+  const siteUrl = new URL(process.env.PUBLIC_SITE_URL || `${protocol}://${req.get('host')}`);
+  res.locals.shareUrl = siteUrl.origin + req.path;
+  res.locals.shareImage = new URL('/images/tam-music-share.png', siteUrl).href;
+  next();
+});
+
 app.use(cookieSession({
   name:     'music-session',
   keys:     [process.env.SESSION_SECRET || 'music-player-secret'],
